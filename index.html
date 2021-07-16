@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0>
+		<script type="text/javascript" src="./bundle.js"></script>
+		<!--Load my JS library into browser's memory-->
+		<script src="src/Util.js"></script>
+		<script src="src/CustomRandom.js"></script>
+		<!--<script src="GeneticNeuralNetwork.js"></script>-->
+		<script src="src/Neuron.js"></script>
+		<script src="src/SmartBoy_5_Ringcore.js"></script>
+		<!--World for gene to explore-->
+		<script src="src/World.js"></script>
+		<script src="src/GeneticEvo.js"></script>
+		
+		<!--<script src="src/GeneticEvo.js"></script>-->
+		<!--UI-->
+		<script src="sketch.js"></script>
+		<script src="p5.js"></script>
+		
+		<title>User Interface</title>
+
+		<script>
+			window.addEventListener("gamepadconnected", function(e) {
+				var gp = navigator.getGamepads()[e.gamepad.index];
+				console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+				gp.index, gp.id,
+				gp.buttons.length, gp.axes.length);
+			});
+			window.addEventListener("gamepaddisconnected", function(e) {
+				console.log("Gamepad disconnected from index %d: %s",
+				e.gamepad.index, e.gamepad.id);
+			});
+		</script>
+		<style>
+			canvas { position:fixed; top:0; left:0; z-index:1; }
+			body {background-color: black;padding:0; margin:0;}
+			#htmlContent { position:relative; z-index:2; }
+			.console-area{
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				min-width: 300px;
+				min-height: 10px;
+				background-color: rgb(32, 10, 10);
+				color: white;
+				resize: none;
+			}
+			.console-area2{
+				position: absolute;
+				top: 50px;
+				left: 10px;
+				min-width: 300px;
+				min-height: 10px;
+				background-color: rgb(32, 10, 10);
+				color: white;
+				resize: none;
+			}
+			.console-area3{
+				position: absolute;
+				top: 90px;
+				left: 10px;
+				min-width: 300px;
+				max-width: 300px;
+				min-height: 10px;
+				background-color: rgb(32, 10, 10);
+				color: white;
+				resize: none;
+			}
+			.control-pane{
+				min-width: 300px;
+				min-height: 130px;
+				border: 1px rgb(255, 255, 255) solid;
+				background-color: rgb(32, 10, 10);
+				z-index: 1000;
+				top: 10px;
+				right: 10px;
+				position: fixed;
+			}
+			.control-pane > * {
+				background-color: rgb(32, 10, 10);
+				color:rgb(255, 255, 255);
+			}
+		</style>
+	</head>
+	<body>
+		<script>
+            function rehookupHiddens(){
+                /*new_connectHidden(boy, {
+                    "new_connections_per_neuron": 3,
+                    "number_of_connections_positive": 2,
+                    "max_pixel_connection_radius": p5_neuronApartDefaultOffset * 1.5
+                });*/
+				SmartBoy.connectCore(boy,
+					JSON.parse(""+document.getElementById("hookupConfig").value)
+				);
+            }
+            function clearHiddens(){
+				boy.oracle.nexts = [];
+				SmartBoy.new_clearOutGoingHiddenConnections(boy);
+			}
+            function recalibrateWeightAngles(){
+                SmartBoy.new_recalWeightArrows(boy);
+            }
+
+            //rehookupHiddens();
+            //normalizeThresholds();
+        </script>
+		<canvas id="canvaass">This browser does not support WEBGL</canvas>
+		<div class="control-pane">
+			<p>Hit enter to update value</p>
+			<button onclick="rehookupHiddens()">Hookup Hiddens</button>
+			<button onclick="clearHiddens()">Clear Hiddens Connections</button>
+			<br>
+			<textarea id="hookupConfig" rows="20" cols="32">{
+					"coreGrowth": "from_input", 
+					"coreRadius": 1.1, 
+					"minFeedback": 1, 
+					"coreConnections": 2,
+					"coreThreshold": 0.9
+				}
+			</textarea>
+			<br>
+			<br>
+			<br>
+			<button onclick="recalibrateWeightAngles()">Re-Align Weight Arrows</button>
+			<br>
+		</div>
+	</body>
+</html>
