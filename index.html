@@ -85,16 +85,26 @@
 	</head>
 	<body>
 		<script>
+
+			
+
             function rehookupHiddens(){
-                /*new_connectHidden(boy, {
-                    "new_connections_per_neuron": 3,
-                    "number_of_connections_positive": 2,
-                    "max_pixel_connection_radius": p5_neuronApartDefaultOffset * 1.5
-                });*/
-				SmartBoy.connectCore(boy,
-					JSON.parse(""+document.getElementById("hookupConfig").value)
-				);
+				resetWholeSmartBoy()
             }
+
+
+			function switchMode(){
+
+				if(uiGeneMode === 0){
+					uiGeneMode = 1
+				}
+				else{
+					uiGeneMode = 0
+				}
+			}
+
+
+
             function clearHiddens(){
 				boy.oracle.nexts = [];
 				SmartBoy.new_clearOutGoingHiddenConnections(boy);
@@ -109,16 +119,16 @@
 		<canvas id="canvaass">This browser does not support WEBGL</canvas>
 		<div class="control-pane">
 			<p>Hit enter to update value</p>
-			<button onclick="rehookupHiddens()">Hookup Hiddens</button>
+			<button onclick="rehookupHiddens()">Reset SmartBoy and Ticker Tape To:</button>
 			<button onclick="clearHiddens()">Clear Hiddens Connections</button>
 			<br>
-			<textarea id="hookupConfig" rows="20" cols="32">{
-					"coreGrowth": "from_input", 
-					"coreRadius": 1.1, 
-					"minFeedback": 1, 
-					"coreConnections": 2,
-					"coreThreshold": 0.9
-				}
+			<button onclick="switchMode()">Switch</button>
+			<br>
+			<textarea id="hookupConfig" rows="20" cols="32">
+				100-b
+				1-h
+				20-b
+				1-f
 			</textarea>
 			<br>
 			<br>

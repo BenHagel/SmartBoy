@@ -22,8 +22,7 @@ class Neuron {
         //Graphix variables
         this.p5_x = 0;
         this.p5_y = 0;
-        this.p5_z = 0;
-        this.p5_diam = p5_neuronDefaultDiam;// p5_neuronDefaultDiam;
+        this.p5_diam = theNeuronDefaultDiam;// p5_neuronDefaultDiam;
         this.p5_hover = 0.0;
         this.p5_type = 0;//0 = input, 1 = hidden, 2 = output
     }

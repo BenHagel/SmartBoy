@@ -24,26 +24,28 @@ const c = multiplyMatrix(a, b);
 
 class SmartBoy{
 
-	constructor(conf){
+	constructor(conf, seed){
 		//ID tracker for generating neurons
 		this.ID_TEMPLATE_ = 0;
-		this.geneManifestationTracker = 0
+
+		//Custom random
+		this.rand = new CustomRandom(""+seed, CHelper__B.hasher_256);
 
 		//Setup
-		this.type = conf.type;//(always "smartboy":)
+		this.type = conf.type;
 		this.layers;//array of neurons[[...4], [...49], [...4]]
 		this.layer_schema = conf.layers;	
 		this.all_neurons = [];//just this.layers[0], this.layers[1], and this.layers[2] concatenated 
-		this.std_neuron_diam = conf.unit_diam;	//how much diameter should neurons have in this smart boy (not used in calculations)
-		this.unit_distance = conf.unit_distance;	//ave arc length between neurons in the core
-		this.unit_offset_x = conf.unit_offset_x;
-		this.unit_offset_y = conf.unit_offset_y;
-		this.unit_offset_z = conf.unit_offset_z;
+		this.std_neuron_diam = 20;	//how much diameter should neurons have in this smart boy (not used in calculations)
+		this.unit_distance = 50;	//ave arc length between neurons in the core
+		this.unit_offset_x = 50;
+		this.unit_offset_y = 50;
 
 		//Unpack the gene and instantiate it into the smart boy's neural architecture
-		this.gene = conf.gene;
+		this.gene = conf.gene ? conf.gene : this.rand.precalced;
+
 		//The object this agent's parameters are stored with a label 
-		this.params = {};
+		this.geneObject = {};
 		
 		//meta SmartBoy info, information about the state of the network
 		this.oracle = {
@@ -63,11 +65,10 @@ class SmartBoy{
 		for(let i = 0;i < this.layers.length;i++){
 			let lyr = [];
 			for(let j = 0;j < conf.layers[i];j++){
-				let cellToAdd = new Neuron(this.ID_TEMPLATE_, this.std_neuron_diam);
+				let cellToAdd = new Neuron(this.ID_TEMPLATE_, this.std_neuron_diam);//this.std_neuron_diam
 				cellToAdd.p5_type = i;//0input;1hidden;2output
 				cellToAdd.p5_x = this.unit_offset_x;
 				cellToAdd.p5_y = this.unit_offset_y;
-				cellToAdd.p5_z = this.unit_offset_z;
 				lyr.push(cellToAdd);
 				this.ID_TEMPLATE_++;
 			}
@@ -77,61 +78,51 @@ class SmartBoy{
 		//Now concat the layers into one referenceable list of all neurons in th e network
 		this.all_neurons = this.layers[0].concat(this.layers[1]).concat(this.layers[2]);
 
-		//Load the gene into the architecture
-		//Need to make sure there are the same amount of ge() calls every constructor call
-		this.params.UNIT_SPACING_VERTICAL_RATIO = this.ge() * this.unit_distance
-		this.params.CONNECTION_RADIUS
-
 		//Set hidden the core of the ring core
 		let p5_sqRootOfHiddenCube = Math.floor(Math.sqrt(this.layer_schema[1]));//sqrt(49) = sidelength of 7
-		let radiusOfRingCore = (p5_sqRootOfHiddenCube*this.unit_distance) / (2*Math.PI) 
 
 		//Place cells in ring core format
 		for(let i = 0;i < this.layers[0].length;i++){//Input
-			let sideLengthOfCube = this.layers[0].length
-			let angleChunksForInputLayer = (2*Math.PI) / sideLengthOfCube
-			this.layers[0][i].p5_x += Math.sin(i*angleChunksForInputLayer) * radiusOfRingCore;
-			this.layers[0][i].p5_z += Math.cos(i*angleChunksForInputLayer) * radiusOfRingCore;
-			this.layers[0][i].p5_y += 0;
+			this.layers[0][i].p5_x += (p5_sqRootOfHiddenCube-1)*this.unit_distance / 2 + this.unit_distance * i
+			this.layers[0][i].p5_y += 0
 		}
 		for(let i = 0;i < this.layers[1].length;i++){//Hidden
-			//Get sidelgnth of the cube to calculate the physical architecture of the neurons
-			let angleChunksForInputLayer = (2*Math.PI) / p5_sqRootOfHiddenCube
-			this.layers[1][i].p5_x += Math.sin(i*angleChunksForInputLayer) * radiusOfRingCore;
-			this.layers[1][i].p5_z += Math.cos(i*angleChunksForInputLayer) * radiusOfRingCore;
-			this.layers[1][i].p5_y += (Math.floor(i/p5_sqRootOfHiddenCube)+1) * (this.unit_distance*this.params.UNIT_SPACING_VERTICAL_RATIO);
+			this.layers[1][i].p5_x += (i % p5_sqRootOfHiddenCube) * this.unit_distance
+			this.layers[1][i].p5_y += this.unit_distance * 1 + Math.floor(i / p5_sqRootOfHiddenCube) * this.unit_distance
 		}
 		for(let i = 0;i < this.layers[2].length;i++){//Output
-			let sideLengthOfCube = this.layers[2].length
-			let angleChunksForInputLayer = (2*Math.PI) / sideLengthOfCube
-			this.layers[2][i].p5_x += Math.sin(i*angleChunksForInputLayer) * radiusOfRingCore;
-			this.layers[2][i].p5_z += Math.cos(i*angleChunksForInputLayer) * radiusOfRingCore;
-			this.layers[2][i].p5_y += this.layers[1][this.layers[1].length-1].p5_y + this.unit_distance;
+			this.layers[2][i].p5_x += (p5_sqRootOfHiddenCube-1)*this.unit_distance / 2 + this.unit_distance * i
+			this.layers[2][i].p5_y += this.unit_distance * 2 + p5_sqRootOfHiddenCube* this.unit_distance
 		}
+
+		//Reset the gene index tracker to 0
+		this.geneIndexTracker = 0
+
+		//Refresh the object that stores the descriptor keys for each gene
+		SmartBoy.refresh_gene_object_v1(this)
+		//Should only be called once
+		SmartBoy.express_gene_object_v1(this)
 		
-		//Instantiate the connections,
-		//this.
-		//SmartBoy.distance3D()
+
 	}
 
-	static distance3D(x1, y1, z1, x2, y2, z2){
-		var dx = x1 - x2;
-		var dy = y1 - y2;
-		var dz = z1 - z2;
-
-		return Math.sqrt( dx * dx + dy * dy + dz * dz );
-	}
 
 	//Method to return the next number in the gene
 	ge() {
-		this.geneManifestationTracker++;
-		return this.geneManifestationTracker-1 < this.gene.length ? this.gene[this.geneManifestationTracker-1] : 0.5;
+		let theGE = this.gene[this.geneIndexTracker]
+		this.geneIndexTracker = (this.geneIndexTracker+1) % this.gene.length
+		return theGE
+	}
+
+	//Called right before refreshing the gene object
+	geReset(){
+		this.geneIndexTracker = 0
 	}
 
 	//Method get total number of times a gene was used
 	//(call only after constructor)
 	geTotal(){
-		return this.geneManifestationTracker;
+		return -1;
 	}
 	
 
@@ -165,7 +156,7 @@ class SmartBoy{
 		}
 	}
 
-
+	//SLeep mode?
 	resetFiredCount() {
 		for(let i = 0;i < this.layers.length;i++){
 			for(let j = 0;j < this.layers[i].length;j++){
@@ -237,14 +228,6 @@ class SmartBoy{
 		return theOuts;
 	}
 
-	trainer() {
-		//T
-		//Start at outputs
-		for(let i = 0;i < this.layers[2].length;i++){
-			
-		}
-
-	}
 
 	sb_train_supervised2(aveoutputs, targetoutputs, learningrate) {
 		let totalError = 0.0;
@@ -470,8 +453,207 @@ class SmartBoy{
 		return -1;
 	}
 
+	//Get the gene
+	static refresh_gene_object_v1(boyy, theGene){
+		//If included theGene, reset the value if not just use the same
+		if(theGene){
+			boyy.gene = theGene
+		}
+		boyy.geReset()
+
+		//Refresh the gene object
+		boyy.geneObject = {
+			hookupMode: boyy.ge(),
+			hookupNeuronDistance: boyy.unit_distance*1.1 + boyy.ge() * 2 * boyy.unit_distance,
+			hookupConnections: 3 + Math.floor(boyy.ge()*6),
+			
+			neuronThresholdAve: boyy.ge()*8,	//Base value
+			neuronThresholdVar: boyy.ge(),		//Range of up and down between neurons
+
+			connectRadiusWidth: boyy.ge(),
+			connectRadiusHeight: boyy.ge(),
+			connectRadiusOffset: boyy.ge()
+		}
+		
+
+	}
+
+
+
+
+
+
+
+
+
+
+
+	static express_gene_object_v1(boyy){
+		let geo = boyy.geneObject
+
+		
+		let orderedUnits = [...boyy.layers[1]];//.slice();
+		SmartBoy.shuffler(orderedUnits);
+
+		//---
+		//Order 1: Organize the order of connection forming
+		//----------------
+
+		//Random shuffle
+		if(geo.hookupMode < 0.5){
+
+		}
+		//Ordered from input
+		else{
+			//If from input, start 
+			let orderedList = [];
+			for(let i = 0;i < boyy.layers[0].length;i++){
+				for(let j = 0;j < boyy.layers[0][i].outgoing.length;j++){
+					if(orderedList.indexOf(boyy.layers[0][i].outgoing[j].n) === -1){
+						orderedList.push(boyy.layers[0][i].outgoing[j].n);
+					}
+
+				}
+			}
+
+			//Hookup the units in the connection radius
+			let deltaTrackedUnits = orderedList.length;
+			do{
+				deltaTrackedUnits = orderedList.length;
+				//Loop through ordered list
+				for(let i = 0;i < orderedList.length;i++){
+					
+					//Check all of in range lists
+					for(let j = 0;j < boyy.layers[1].length;j++){
+						if(Math.hypot(orderedList[i].p5_x - boyy.layers[1][j].p5_x,
+							orderedList[i].p5_y - boyy.layers[1][j].p5_y) 
+							<
+							geo.hookupNeuronDistance)
+							{
+								if(orderedList.indexOf(boyy.layers[1][j]) === -1)
+									orderedList.push(boyy.layers[1][j]);
+						}
+					}
+				}
+
+			}while(deltaTrackedUnits !== boyy.layers[1].length && orderedList.length > 0);
+
+			orderedUnits = orderedList;
+		}
+
+		//Special addition of first input to the top layer
+		let sq_mid = Math.floor(Math.sqrt(boyy.layers[1].length))
+		for(let j = 0;j < sq_mid;j++){
+			Neuron.Neuron_connect(boyy.layers[0][0], boyy.layers[1][j]);
+		}
+		//And the last layer to the back
+		for(let j = boyy.layers[1].length-sq_mid;j < boyy.layers[1].length;j++){
+			Neuron.Neuron_connect(boyy.layers[1][j], boyy.layers[2][0]);
+		}
+		//---
+		//Order 2: Go through ordered units and hook up
+		//----------------
+		for(let i = 0;i < orderedUnits.length;i++){
+			//Get list of neurons within max pixel distance
+			let neighbours = [];
+			let neuToComputeAround = orderedUnits[i];
+			for(let j = orderedUnits.length-1;j > -1 ;j--){
+				if(i !== j){
+					if(Math.hypot(neuToComputeAround.p5_x - orderedUnits[j].p5_x,
+						neuToComputeAround.p5_y - orderedUnits[j].p5_y) 
+						<
+						geo.hookupNeuronDistance)
+						{
+							neighbours.push(orderedUnits[j]);
+						}
+				}
+			}
+
+
+
+
+
+			//Check if neighbours are at least 'conf.minFeedback' connections backward
+			let layersBack = 1//Math.floor(Math.max(1, conf.minFeedback + 0));//ALWAYS >= 1
+			let offLimitUnits = [neuToComputeAround];//.incoming.slice();
+
+			//While there are still layers to explore that you may be connecting to
+			while(layersBack > 0){
+				for(let j = offLimitUnits.length-1;j > -1;j--){
+					for(let k = 0;k < offLimitUnits[j].incoming.length;k++){
+						offLimitUnits.push(offLimitUnits[j].incoming[k].n);
+					}
+					//offLimitUnits.concat(offLimitUnits[j].incoming.slice());
+				}
+				layersBack--;
+			}
+			//Unique units only in the off-limit list to check all the neuighbours against
+			offLimitUnits = [...new Set(offLimitUnits)];
+
+			//Remove neighbours that count as too close a feedback loop
+			for(let j = neighbours.length-1;j > -1;j--){
+				for(let k = 0;k < offLimitUnits.length;k++){
+					if(neighbours[j] === offLimitUnits[k]){
+						neighbours.splice(j, 1);
+						k = offLimitUnits.length;
+					}
+				}
+			}
+			
+
+			
+
+
+
+			//Select the neighbours to connect to now
+			for(let j = 0;j < geo.hookupConnections && neighbours.length > 0;j++){
+				let connectTo = neighbours.splice(
+					Math.floor(Math.random()*neighbours.length), 1
+				)[0];
+				Neuron.Neuron_connect(neuToComputeAround, connectTo);
+			}
+
+			//Threshold recalibration
+			for(let i = 0;i < boyy.layers[1].length;i++){
+				//Normalize neuron threshold
+				let neuToComputeAround = boyy.layers[1][i];
+				neuToComputeAround.threshold = neuToComputeAround.incoming.length *
+					geo.neuronThresholdAve;
+			}
+		}
+
+	}
+
+
+
+
+
+
+
+	static shuffler(array) {
+		let currentIndex = array.length,  randomIndex;
+
+		// While there remain elements to shuffle...
+		while (currentIndex != 0) {
+
+			// Pick a remaining element...//boyy.rand.random_pre()
+			randomIndex = Math.floor(Math.random() * currentIndex);
+			currentIndex--;
+
+			// And swap it with the current element.
+			[array[currentIndex], array[randomIndex]] = [
+			array[randomIndex], array[currentIndex]];
+		}
+
+		return array;
+	}
+
 	///UTIL FUNCTIONS FOR SMART BOY V 5 (Ringcore)
-	static connectCore(boyy, conf){
+	static connectCore(boyy, theGene){
+		//Set the new 
+		boyy.gene = theGene
+
+		boyy.geReset()
 		//Conf containts:
 		/*
 			{
@@ -598,10 +780,17 @@ class SmartBoy{
 				}
 
 				//Threshold recalibration
-				new_new_normalizeThresholds(boyy, conf.coreThreshold);
+				//new_new_normalizeThresholds(boyy, conf.coreThreshold);
+				for(let i = 0;i < boyy.layers[1].length;i++){
+					//Normalize neuron threshold
+					let neuToComputeAround = boyy.layers[1][i];
+					neuToComputeAround.threshold = neuToComputeAround.incoming.length *
+						conf.coreThreshold;
+				}
 			}
 		}
 	}
+
 
 	static new_clearOutGoingHiddenConnections(boyy){
 		for(let yy = 0; yy < 3;yy++){
@@ -611,14 +800,8 @@ class SmartBoy{
 			}
 		}
 	}
-	static new_new_normalizeThresholds(boyy, thresholdMultiplier){
-		for(let i = 0;i < boyy.layers[1].length;i++){
-			//Normalize neuron threshold
-			let neuToComputeAround = boyy.layers[1][i];
-			neuToComputeAround.threshold = neuToComputeAround.incoming.length *
-				thresholdMultiplier;
-		}
-	}
+
+
 	
 	static new_recalWeightArrows(boyy){
 		for(let i = 0;i < boyy.all_neurons.length;i++){
