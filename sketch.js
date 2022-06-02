@@ -37,7 +37,7 @@ var uiGeneMode = 0
 function resetWholeSmartBoy(){
 	boy = new SmartBoy({
 		"type": "smartboy",		//Smartboy
-		"layers": [1, 25, 1],	//The policy network
+		"layers": [1, 49, 1],	//The policy network
 		"gene": null,	//values for all the god parameters required
 	}, "test s e e d " + Math.random());
 	SmartBoy.refresh_gene_object_v1(boy)
@@ -103,11 +103,11 @@ function draw(){
 
 	}
 	else{
-		if(uiGeneMode === 0){
+		if(uiGeneMode === 0){//Gene Mode
 			background(7, 61, 132)
 
 		}
-		else if(uiGeneMode === 1){
+		else if(uiGeneMode === 1){//Inspector Mode
 			//background(30, 20, 20);
 			background(119, 119, 24);
 		}

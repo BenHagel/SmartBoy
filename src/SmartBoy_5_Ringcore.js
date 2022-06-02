@@ -463,18 +463,35 @@ class SmartBoy{
 
 		//Refresh the gene object
 		boyy.geneObject = {
-			hookupMode: boyy.ge(),
+			//Model level attributes
+			hookupRandomOrFromInput: boyy.ge(),
 			hookupNeuronDistance: boyy.unit_distance*1.1 + boyy.ge() * 2 * boyy.unit_distance,
 			hookupConnections: 3 + Math.floor(boyy.ge()*6),
-			
-			neuronThresholdAve: boyy.ge()*8,	//Base value
-			neuronThresholdVar: boyy.ge(),		//Range of up and down between neurons
 
-			connectRadiusWidth: boyy.ge(),
-			connectRadiusHeight: boyy.ge(),
-			connectRadiusOffset: boyy.ge()
+			neuronTypes: 1,// + Math.floor(boyy.ge()*2),
+			neuronType: [],	//Gets filled out by ^^^
+
+			totalNeuronPortionSize: 0//Gets filled by ^
+
+			
+		}
+
+		//Need neuron types
+		let totalPortion = 0
+		for(let j = 0;j < boyy.geneObject.neuronTypes;j++){
+
+			let portion = Math.random()
+
+			boyy.geneObject.neuronType.push({
+				//Per neuron attributes
+				neuronThresholdAve: boyy.ge()*8,	//Base value
+				neuronPortionVal: portion
+			})
+
+			totalPortion += portion
 		}
 		
+		boyy.geneObject.totalNeuronPortionSize = totalPortion
 
 	}
 
@@ -493,15 +510,39 @@ class SmartBoy{
 
 		
 		let orderedUnits = [...boyy.layers[1]];//.slice();
-		SmartBoy.shuffler(orderedUnits);
+		
+
+		//---
+		//Order 0: Input layer hookup right away 
+		//		so that if connectinos are ordered it knows where to start
+		//----------------
+		//input layer hookup
+		//Special addition of first input to the top layer
+		let sq_mid = Math.floor(Math.sqrt(boyy.layers[1].length))
+		let icingOnTopLayer = Math.ceil(sq_mid/2)+1
+		let increaser = 0
+		let front = true// or back
+		//Neuron.Neuron_connect(boyy.layers[0][0], boyy.layers[1][Math.floor(sq_mid/2)]);//first connect middle to middle
+
+		while(icingOnTopLayer > 0){
+			if(boyy.layers[1][Math.floor(sq_mid/2 - increaser)])
+				Neuron.Neuron_connect(boyy.layers[0][0], boyy.layers[1][Math.floor(sq_mid/2 - increaser)])
+			if(boyy.layers[1][Math.floor(sq_mid/2 + increaser)])
+				Neuron.Neuron_connect(boyy.layers[0][0], boyy.layers[1][Math.floor(sq_mid/2 + increaser)])
+
+			icingOnTopLayer--
+			increaser++
+		}
+		// for(let j = 0;j < sq_mid;j++){
+		// 	Neuron.Neuron_connect(boyy.layers[0][0], boyy.layers[1][j]);
+		// }
 
 		//---
 		//Order 1: Organize the order of connection forming
 		//----------------
-
 		//Random shuffle
-		if(geo.hookupMode < 0.5){
-
+		if(geo.hookupRandomOrFromInput < 0.5){
+			SmartBoy.shuffler(orderedUnits);
 		}
 		//Ordered from input
 		else{
@@ -535,21 +576,18 @@ class SmartBoy{
 						}
 					}
 				}
-
 			}while(deltaTrackedUnits !== boyy.layers[1].length && orderedList.length > 0);
-
 			orderedUnits = orderedList;
 		}
-
-		//Special addition of first input to the top layer
-		let sq_mid = Math.floor(Math.sqrt(boyy.layers[1].length))
-		for(let j = 0;j < sq_mid;j++){
-			Neuron.Neuron_connect(boyy.layers[0][0], boyy.layers[1][j]);
-		}
+		//output layer hookup
 		//And the last layer to the back
 		for(let j = boyy.layers[1].length-sq_mid;j < boyy.layers[1].length;j++){
 			Neuron.Neuron_connect(boyy.layers[1][j], boyy.layers[2][0]);
 		}
+
+
+
+
 		//---
 		//Order 2: Go through ordered units and hook up
 		//----------------
@@ -615,10 +653,14 @@ class SmartBoy{
 
 			//Threshold recalibration
 			for(let i = 0;i < boyy.layers[1].length;i++){
+
+				//Get randomizer neuron type
+				let randInt = Math.floor(geo.neuronType.length * Math.random())
+				
 				//Normalize neuron threshold
 				let neuToComputeAround = boyy.layers[1][i];
 				neuToComputeAround.threshold = neuToComputeAround.incoming.length *
-					geo.neuronThresholdAve;
+					geo.neuronType[randInt].neuronThresholdAve
 			}
 		}
 
@@ -646,149 +688,6 @@ class SmartBoy{
 		}
 
 		return array;
-	}
-
-	///UTIL FUNCTIONS FOR SMART BOY V 5 (Ringcore)
-	static connectCore(boyy, theGene){
-		//Set the new 
-		boyy.gene = theGene
-
-		boyy.geReset()
-		//Conf containts:
-		/*
-			{
-				"coreGrowth": "from_inputs", (or "total_random")
-				/////////////"coreWrap": false, (units in the core loop around)
-				"coreRadius": 1.5, (multiply by one unit distance to get connection radius for a unit)
-				"minFeedback": 1, (can not connect back on a unit)
-				"coreConnections": 2, (each unit connects to two other units)
-				"coreThreshold": 0.5 (connect maximum)
-			}
-		*/
-
-		conf.coreWrap = false;
-
-		let orderedUnits = [...boyy.layers[1]];//.slice();
-		shuffler(orderedUnits);
-
-		//Depending on the development pattern of this core
-		//(Either originating from the inputs, or connections start growing from uniformly randomly picked locations)
-		if(conf.coreGrowth === "from_random"){
-
-		}
-		else if(conf.coreGrowth === "from_input"){
-			//If from input, start 
-			let orderedList = [];
-			for(let i = 0;i < boyy.layers[0].length;i++){
-				for(let j = 0;j < boyy.layers[0][i].outgoing.length;j++){
-					if(orderedList.indexOf(boyy.layers[0][i].outgoing[j].n) === -1){
-						orderedList.push(boyy.layers[0][i].outgoing[j].n);
-					}
-
-				}
-			}
-
-			//Hookup the units in the connection radius
-			let deltaTrackedUnits = orderedList.length;
-			do{
-				deltaTrackedUnits = orderedList.length;
-				//Loop through ordered list
-				for(let i = 0;i < orderedList.length;i++){
-					
-					//Check all of in range lists
-					for(let j = 0;j < boyy.layers[1].length;j++){
-						if(Math.hypot(orderedList[i].p5_x - boyy.layers[1][j].p5_x,
-							orderedList[i].p5_y - boyy.layers[1][j].p5_y) 
-							<
-							conf.coreRadius * boyy.unit_distance)
-							{
-								if(orderedList.indexOf(boyy.layers[1][j]) === -1)
-									orderedList.push(boyy.layers[1][j]);
-						}
-					}
-				}
-
-			}while(deltaTrackedUnits !== boyy.layers[1].length && orderedList.length > 0);
-
-			orderedUnits = orderedList;
-		}
-		
-		
-
-		//Units are connected randomly regardless of location
-		//of signals on their way into the core
-		//Edge units are not considered close to units on opposite edge
-		if(conf.coreWrap === true){
-			//Loop through every hidden neuron and hook em up
-			for(let i = orderedUnits.length-1;i > -1 ;i--){
-
-			}
-		}
-		//Cannot loop around to connect to other units on the opposite edge
-		else if(conf.coreWrap === false){
-			//for(let i = orderedUnits.length-1;i > -1 ;i--){   This order inverts the path building you developed
-			for(let i = 0;i < orderedUnits.length;i++){
-				//Get list of neurons within max pixel distance
-				let neighbours = [];
-				let neuToComputeAround = orderedUnits[i];
-				for(let j = orderedUnits.length-1;j > -1 ;j--){
-					if(i !== j){
-						if(Math.hypot(neuToComputeAround.p5_x - orderedUnits[j].p5_x,
-							neuToComputeAround.p5_y - orderedUnits[j].p5_y) 
-							<
-							conf.coreRadius * boyy.unit_distance){
-								neighbours.push(orderedUnits[j]);
-							}
-					}
-				}
-
-				//Check if neighbours are at least 'conf.minFeedback' connections backward
-				let layersBack = Math.floor(Math.max(1, conf.minFeedback + 0));//ALWAYS >= 1
-				let offLimitUnits = [neuToComputeAround];//.incoming.slice();
-
-				//While there are still layers to explore that you may be connecting to
-				while(layersBack > 0){
-					for(let j = offLimitUnits.length-1;j > -1;j--){
-						for(let k = 0;k < offLimitUnits[j].incoming.length;k++){
-							offLimitUnits.push(offLimitUnits[j].incoming[k].n);
-						}
-						//offLimitUnits.concat(offLimitUnits[j].incoming.slice());
-					}
-					layersBack--;
-				}
-				//Unique units only in the off-limit list to check all the neuighbours against
-				offLimitUnits = [...new Set(offLimitUnits)];
-
-				//Remove neighbours that count as too close a feedback loop
-				for(let j = neighbours.length-1;j > -1;j--){
-					for(let k = 0;k < offLimitUnits.length;k++){
-						if(neighbours[j] === offLimitUnits[k]){
-							neighbours.splice(j, 1);
-							k = offLimitUnits.length;
-						}
-					}
-				}
-
-				//Select the neighbours to connect to now
-				for(let j = 0;j < conf.coreConnections && neighbours.length > 0;j++){
-					let conTo = neighbours.splice(
-						Math.floor(OVERLORD_RAND.random()*neighbours.length), 1
-					)[0];
-					//if(!conTo) console.log("ERRRRRRRRRRRRRR");
-					//if(neighbours.length < 1) console.log("YEP");
-					Neuron.Neuron_connect(neuToComputeAround, conTo);
-				}
-
-				//Threshold recalibration
-				//new_new_normalizeThresholds(boyy, conf.coreThreshold);
-				for(let i = 0;i < boyy.layers[1].length;i++){
-					//Normalize neuron threshold
-					let neuToComputeAround = boyy.layers[1][i];
-					neuToComputeAround.threshold = neuToComputeAround.incoming.length *
-						conf.coreThreshold;
-				}
-			}
-		}
 	}
 
 

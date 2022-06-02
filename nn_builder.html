@@ -89,7 +89,7 @@
 			
 
             function rehookupHiddens(){
-				resetWholeSmartBoy()
+				//resetWholeSmartBoy()
             }
 
 
@@ -97,9 +97,11 @@
 
 				if(uiGeneMode === 0){
 					uiGeneMode = 1
+					document.getElementById("uiModeToggler").innerText = "Inspector Mode"
 				}
 				else{
 					uiGeneMode = 0
+					document.getElementById("uiModeToggler").innerText = "Gene Mode"
 				}
 			}
 
@@ -119,11 +121,10 @@
 		<canvas id="canvaass">This browser does not support WEBGL</canvas>
 		<div class="control-pane">
 			<p>Hit enter to update value</p>
-			<button onclick="rehookupHiddens()">Reset SmartBoy and Ticker Tape To:</button>
+			<button onclick="rehookupHiddens()">set ticker tape to:</button>
 			<button onclick="clearHiddens()">Clear Hiddens Connections</button>
 			<br>
-			<button onclick="switchMode()">Switch</button>
-			<br>
+			<button id="uiModeToggler" onclick="switchMode()">Gene Mode</button>
 			<textarea id="hookupConfig" rows="20" cols="32">
 				100-b
 				1-h

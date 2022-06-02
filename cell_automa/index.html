@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0>
+		<script type="text/javascript" src="./bundle.js"></script>
+		<script src="p5.min.js"></script>
+		<!--<script src="server/p5.dom.min.js"></script>-->
+		<!--<script src="https://cdn.jsdelivr.net/npm/p5@0.10.2/lib/p5.js"></script>-->
+		<script src="CustomRandom.js"></script>
+		<script src="sktch3.js"></script>
+		<script src="nn.js"></script>
+
+		<title>User Interface</title>
+
+		<script>
+			window.addEventListener("gamepadconnected", function(e) {
+				var gp = navigator.getGamepads()[e.gamepad.index];
+				console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+				gp.index, gp.id,
+				gp.buttons.length, gp.axes.length);
+			});
+			window.addEventListener("gamepaddisconnected", function(e) {
+				console.log("Gamepad disconnected from index %d: %s",
+				e.gamepad.index, e.gamepad.id);
+			});
+		</script>
+		<style>
+			canvas { position:fixed; top:0; left:0; z-index:1; }
+			body {background-color: black;padding:0; margin:0;}
+			#htmlContent { color: white;position:relative; z-index:2; }
+			.console-area{
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				min-width: 300px;
+				min-height: 10px;
+				background-color: rgb(32, 10, 10);
+				color: white;
+				resize: none;
+			}
+			.console-area2{
+				position: absolute;
+				top: 50px;
+				left: 10px;
+				min-width: 300px;
+				min-height: 10px;
+				background-color: rgb(32, 10, 10);
+				color: white;
+				resize: none;
+			}
+			.console-area3{
+				position: absolute;
+				top: 90px;
+				left: 10px;
+				min-width: 300px;
+				min-height: 10px;
+				background-color: rgb(32, 10, 10);
+				color: white;
+				resize: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="htmlContent">
+			<div id="detailCoordinates"></div>
+			<div id="frare"></div>
+		</div>
+		<canvas id="canvaass">This browser does not support WEBGL</canvas>
+
+	</body>
+</html>

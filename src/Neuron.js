@@ -57,9 +57,9 @@ class Neuron {
             "w": w,
             "m": 0.0,
             "t": tt,	//type of weight connection not sure what this is for yet
-                "r": Math.floor(OVERLORD_RAND.random()*145) + 100,
-                "g": Math.floor(OVERLORD_RAND.random()*145) + 100,
-                "b": Math.floor(OVERLORD_RAND.random()*145) + 100,
+                "r": Math.floor(OVERLORD_RAND.random()*225) + 30,
+                "g": Math.floor(OVERLORD_RAND.random()*225) + 30,
+                "b": Math.floor(OVERLORD_RAND.random()*225) + 30,
             //Makes the arrow point to a cloud around the receiving neuron
             "p5_offsetx": Math.cos(anglee) * ((neu_to.p5_diam/2)*1.2),
             "p5_offsety": Math.sin(anglee) * ((neu_to.p5_diam/2)*1.2),
