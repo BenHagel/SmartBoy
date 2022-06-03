@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0>
+		
+
+		<title>User Interface</title>
+
+		<script>
+			window.addEventListener("gamepadconnected", function(e) {
+				var gp = navigator.getGamepads()[e.gamepad.index];
+				console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+				gp.index, gp.id,
+				gp.buttons.length, gp.axes.length);
+			});
+			window.addEventListener("gamepaddisconnected", function(e) {
+				console.log("Gamepad disconnected from index %d: %s",
+				e.gamepad.index, e.gamepad.id);
+			});
+		</script>
+		<style>
+			body {
+				background-color: rgb(0, 0, 0);
+				padding:15px;
+			}
+			#htmlContent {
+				color: white;
+				position:relative; 
+				z-index:2; 
+				display: inline-flex;
+				background-color: rgb(23, 23, 46);
+				padding:15px; 
+			}
+			.canvas-container{
+
+			}
+			#settingsPanel{
+				
+				background-color: rgb(105, 57, 30);
+				padding:10px; 
+				min-width: 150px;
+			}
+			.console-area{
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				min-width: 300px;
+				min-height: 10px;
+				background-color: rgb(32, 10, 10);
+				color: white;
+				resize: none;
+			}
+			.console-area2{
+				position: absolute;
+				top: 50px;
+				left: 10px;
+				min-width: 300px;
+				min-height: 10px;
+				background-color: rgb(32, 10, 10);
+				color: white;
+				resize: none;
+			}
+			.console-area3{
+				position: absolute;
+				top: 90px;
+				left: 10px;
+				min-width: 300px;
+				min-height: 10px;
+				background-color: rgb(32, 10, 10);
+				color: white;
+				resize: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="htmlContent">
+			<div id="templateCanvasLocation" class="canvas-container"></div>
+		
+			<div id="settingsPanel">
+				<p>template size: <span id="templateInputSize_display">1</span></p>
+				<input id="templateInputSize" type="range" value="1" min="1" max="10" step="1" oninput="updateTemplateSize()">
+
+				<p>kernel size: <span id="templateKernelSize_display">1</span></p>
+				<input id="templateKernelSize" type="range" value="1" min="1" max="10" step="1" oninput="updateKernelSize()">
+
+				<p>output size: <span id="outputSize_display">1</span></p>
+				<input id="outputSize" type="range" value="1" min="1" max="10" step="1" oninput="updateOutputSize()">
+
+				<br>
+				<p>control</p>
+				<button onclick="propogateNewTemplateObjectWRandomSeed()">update template</button>
+
+				
+
+				<p></p>
+			</div>
+
+			<div id="outputCanvasLocation" class="canvas-container"></div>
+		</div>
+		<div>
+			<img src="numberList.png">
+		</div>
+
+		<script type="text/javascript" src="./bundle.js"></script>
+		<script src="p5.min.js"></script>
+		<!--<script src="server/p5.dom.min.js"></script>-->
+		<!--<script src="https://cdn.jsdelivr.net/npm/p5@0.10.2/lib/p5.js"></script>-->
+		<script src="CustomRandom.js"></script>
+		<!-- <script src="sktch3.js"></script>
+		<script src="nn.js"></script> -->
+		
+		<script src="wfc_template.js"></script>
+		<script src="wfc_output.js"></script>
+		
+		
+		<script src="wfc_manager.js"></script>
+		<!-- <script src="quadtree_test.js"></script> -->
+
+	</body>
+</html>
