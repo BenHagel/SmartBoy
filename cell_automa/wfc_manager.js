@@ -7,79 +7,7 @@
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////Input updates
-////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-function updateTemplateSize(){
-  //Grab new template size
-  template_grid_size = Math.ceil(
-    Number(document.getElementById("templateInputSize").value)
-  )
-  document.getElementById("templateInputSize_display").innerHTML = template_grid_size
-  
-  //reshape the "template_current_grid"
-  if(template_grid_size !== template_current_grid.length){
-    if(template_grid_size < template_current_grid.length){
-      while(template_current_grid.length > template_grid_size){
-        template_current_grid.pop()
-        for(let i = 0;i < template_current_grid.length;i++){
-          template_current_grid[i].pop()
-        }
-      }
-    }
-    else{
-      while(template_current_grid.length < template_grid_size){
-        let newArrayAndItsSize = new Array(template_current_grid.length+1);
-        for(let i = 0;i < newArrayAndItsSize.length;i++) newArrayAndItsSize[i] = 0;
-        template_current_grid.push(newArrayAndItsSize)
-        for(let i = template_current_grid.length-2;i > -1;i--){
-          template_current_grid[i].push(0)
-        }
-      }
-    }
-  }
-}
-
-function updateKernelSize(){
-  //Grab new kernel size
-  template_kernel_size = Math.ceil(
-    Number(document.getElementById("templateKernelSize").value)
-  )
-  document.getElementById("templateKernelSize_display").innerHTML = template_kernel_size
-  
-}
-
-function updateOutputSize(){
-  //Grab new kernel size
-  output_possibility_grid_size = Math.ceil(
-    Number(document.getElementById("outputSize").value)
-  )
-  document.getElementById("outputSize_display").innerHTML = output_possibility_grid_size
-  
-  //reshape the "output_possibility_grid"
-  if(output_possibility_grid_size !== output_possibility_grid.length){
-    if(output_possibility_grid_size < output_possibility_grid.length){
-      while(output_possibility_grid.length > output_possibility_grid_size){
-        output_possibility_grid.pop()
-        for(let i = 0;i < output_possibility_grid.length;i++){
-          output_possibility_grid[i].pop()
-        }
-      }
-    }
-    else{
-      while(output_possibility_grid.length < output_possibility_grid_size){
-        let newArrayAndItsSize = new Array(output_possibility_grid.length+1);
-        for(let i = 0;i < newArrayAndItsSize.length;i++) newArrayAndItsSize[i] = 0;
-        output_possibility_grid.push(newArrayAndItsSize)
-        for(let i = output_possibility_grid.length-2;i > -1;i--){
-          output_possibility_grid[i].push(0)
-        }
-      }
-    }
-  }
-}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////Test code
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,10 +26,10 @@ var templatePossibilities = [
 ]
 
 //Template variables
-var template_grid_size = 1
-var template_ui_paintBrush = 1
-var template_current_grid = [[0]]
+var template_grid_size = 2
 var template_kernel_size = 1
+var template_ui_paintBrush = 1
+var template_current_grid = [[0,0],[0,0]]
 
 var WFC_TEMPLATE_2 = null;//WFC_initGenerator();
 
@@ -109,8 +37,7 @@ var WFC_TEMPLATE_2 = null;//WFC_initGenerator();
 //Output generation variables
 var output_seed = "googoogaga1"
 var output_cr = new CustomRandom(""+output_seed,  1);
-var output_possibility_grid_size = 1
-var output_possibility_grid = [[0]]
+var output_grid_size = 2
 
 
 
@@ -186,17 +113,186 @@ function WFC_getKernels(the_grid, kernel_range){//2d array of integers, array of
 
 
 function WFC_initGenerator(WFC_1, output_grid_size, randoSeed){
-  output_cr = new CustomRandom(""+randoSeed, 1);
 
-  for(let w = 0;w < output_possibility_grid.length;w++){
-    for(let y = 0;y < output_possibility_grid[w].length;y++){
-      //output_possibility_grid[w][y] = 
-    }
+  let T2 = {
+    t1: WFC_1,
+    cr: new CustomRandom(""+randoSeed, 1),
+    output_grid_size: output_grid_size,
+    output_possibility_grid: [],  //the current state of the possibilities grid
+    cells_of_interest: [], //the next cells to collapse
+    elapsed_steps: 0
+  };
+
+  T2.output_possibility_grid = new Array(T2.output_grid_size)
+  for(let i = 0;i < T2.output_possibility_grid.length;i++){//Creates null array w the dimensions of the outut_grid_size
+    T2.output_possibility_grid[i] = new Array(T2.output_grid_size)
   }
 
 
+  for(let i = 0;i < T2.output_possibility_grid.length;i++){
+    for(let j = 0;j < T2.output_possibility_grid[i].length;j++){
+
+      let cellOutputPossibilty = {}
+      //Possible options left for this grid cell
+      cellOutputPossibilty.possibleValsLeft = new Array(T2.t1.possible_values.length)
+      for(let k = 0;k < cellOutputPossibilty.possibleValsLeft.length;k++){
+        cellOutputPossibilty.possibleValsLeft[k] = T2.t1.possible_values[k];
+      }
+
+      //Adding in the kernels punch card
+      cellOutputPossibilty.kernelsLeft = new Array(T2.t1.kernels.length)
+      for(let k = 0;k < T2.t1.kernels.length;k++){
+
+        let lengthArray = new Array(T2.t1.kernels[k].ks.length)
+        for(let b = 0;b < lengthArray.length;b++) lengthArray[b] = b;
+
+        cellOutputPossibilty.kernelsLeft[k] = lengthArray;
+      }
+      
+      T2.output_possibility_grid[i][j] = cellOutputPossibilty;//{possibleValsLeft: [1,9,18], kernelsLeft:[[1,4,7], [0,1,2]]}
+
+    }
+  }
+  
+  
+
+
+  return T2;
 }
 
+function WFC_addCellsOfInterestAroundThisCell(WFC_2, x, y){
+  if(x > 0) WFC_2.cells_of_interest.push({x: x-1, y: y})
+  if(x < WFC_2.output_possibility_grid.length-1) WFC_2.cells_of_interest.push({x: x+1, y: y})
+
+  if(y > 0) WFC_2.cells_of_interest.push({x: x, y: y-1})
+  if(y < WFC_2.output_possibility_grid[0].length-1) WFC_2.cells_of_interest.push({x: x, y: y+1})
+}
+
+function WFC_manualCollapse(WFC_2, x, y, value){
+  WFC_2.output_possibility_grid[x][y].possibleValsLeft = [value]
+  WFC_2.output_possibility_grid[x][y].kernelsLeft = []
+  //Add the cells of interest around this wfc
+  WFC_addCellsOfInterestAroundThisCell(WFC_2, x, y);
+}
+
+
+function WFC_kernelAtAllValidHere(WFC_2, x, y, kernel){
+  console.log("kernel checkinL")
+  console.log(kernel)
+
+  let kernelCombinations = kernel.length * kernel[0].length
+
+  let possibilitiesFromThisKernelSoFar = []
+
+  //Check every angle of every kernel
+  for(let b = 0;b < kernelCombinations;b++){
+
+    //Modify position of the kernel
+    let offX = b % kernel.length;               //start kernel this far from the left
+    let offY = Math.floor(b / kernel[0].length) //start kernel this far from the top
+    let farLeftX = x-offX //must be at least 0
+    let farRightX = x-offX+kernel.length-1//must be smaller than width length
+    let farTopY = y-offY //must be at least 0
+    let farDownY = y-offY+kernel[0].length-1//must be smaller than width length
+
+    //Make sure this variation of the kernel is in bounds
+    if(farLeftX > -1 && 
+      farRightX < WFC_2.output_possibility_grid.length && 
+      farTopY > -1 && 
+      farDownY < WFC_2.output_possibility_grid[farLeftX].length){
+
+      //Kernel template matches the possibilities for each number around it
+      let thisVariantIsPossible = true;
+      let theValueDerivedFromThisKernelVariant = null
+      for(let i = 0;i < kernel.length;i++){
+        for(let j = 0;j < kernel[i].length;j++){
+
+          if(WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft.indexOf(kernel[i][j]) < 0){
+            thisVariantIsPossible = false;  
+          }
+          else if(farLeftX+i === x && farTopY+j === y){
+            theValueDerivedFromThisKernelVariant = kernel[i][j]
+          }
+        }
+      }
+
+      if(thisVariantIsPossible){//then also the value derived mustve been set so that's the value this kernel proves
+        if(possibilitiesFromThisKernelSoFar.indexOf(theValueDerivedFromThisKernelVariant) < 0){
+          possibilitiesFromThisKernelSoFar.push(theValueDerivedFromThisKernelVariant)
+        }
+      }
+      //else{}//Just move on to the next position of this kernel
+      
+    }
+  }
+
+  return possibilitiesFromThisKernelSoFar;
+}
+
+
+function WFC_refreshPossibilitiesBasedOnKernels(WFC_2, x, y){
+
+  let posValsPunchCard = new Array(WFC_2.t1.possible_values.length)
+  for(let i = 0;i < posValsPunchCard.length;i++){
+    posValsPunchCard[i] = 0
+  }
+
+  let examiningGrid = WFC_2.output_possibility_grid[x][y]
+
+  let kernels = WFC_2.t1.kernels
+  for(let i = 0;i < kernels.length;i++){
+    //let kVal = kernels[i].n
+    for(let j = 0;j < kernels[i].ks.length;j++){
+
+      let possibleValuesMadePossibleByKernel = 
+        WFC_kernelAtAllValidHere(WFC_2, x, y, kernels[i].ks[j])
+
+      //The possible values this kernel enables
+      for(let u = 0;u < possibleValuesMadePossibleByKernel.length;u++){
+        posValsPunchCard[possibleValuesMadePossibleByKernel[u]] = 1//punch the hole
+      }
+
+    }
+  }
+
+  examiningGrid.possibleValsLeft = []
+  for(let i = 0;i < posValsPunchCard.length;i++){
+    if(posValsPunchCard[i] > 0){
+      examiningGrid.possibleValsLeft.push(i)
+    }
+  }
+}
+
+function WFC_crossCheckRemainingKernels(WFC_2, x, y){
+
+  let gridCellObject = WFC_2.output_possibility_grid[x][y]
+  if(gridCellObject.possibleValsLeft.length < 2) return null;
+
+  let possibilitiesBeforeChange = 0 + gridCellObject.possibleValsLeft.length
+
+  //Changes the possibilities of this grid cell based on most recent possible values around
+  WFC_refreshPossibilitiesBasedOnKernels(WFC_2, x, y)
+      
+  if(possibilitiesBeforeChange !== gridCellObject.possibleValsLeft.length){
+    //Add next cells of interest
+    WFC_addCellsOfInterestAroundThisCell(WFC_2, x, y);
+  }
+}
+
+function WFC_collapseNextCells(WFC_2){
+
+  let starting_cells = WFC_2.cells_of_interest.length;// = null
+
+  while(starting_cells > 0){
+    let xell = WFC_2.cells_of_interest.shift()
+    WFC_crossCheckRemainingKernels(WFC_2, xell.x, xell.y)
+    starting_cells--
+  }
+
+  WFC_2.elapsed_steps += 1;
+  
+  return WFC_2.cells_of_interest.length
+}
 
 
 
@@ -219,33 +315,39 @@ var sketch_template = function(p) {
     p.createCanvas(300, 300);
     p.rectMode(p.CENTER)
     p.frameRate(30)
+    p.smooth()
   };
 
   p.draw = function() {
     p.background(34, 0, 0);
-    let gridPixels = p.width / template_current_grid.length
+    if(template_current_grid){
+      //console.log(p.mouseX)
+      let gridPixels = p.width / template_current_grid.length
 
-    //Paint brush when mouse down
-    if(p.mouseIsPressed){
-      let firstInd = Math.floor(p.mouseX / gridPixels)
-      let secondInd = Math.floor(p.mouseY / gridPixels)
-      if(template_current_grid[firstInd]){
-        if(secondInd < template_current_grid[firstInd].length){
-          template_current_grid[firstInd][secondInd] = template_ui_paintBrush
+      //Paint brush when mouse down
+      if(p.mouseIsPressed){
+        let firstInd = Math.floor(p.mouseX / gridPixels)
+        let secondInd = Math.floor(p.mouseY / gridPixels)
+        if(template_current_grid[firstInd]){
+          if(secondInd < template_current_grid[firstInd].length){
+            template_current_grid[firstInd][secondInd] = template_ui_paintBrush
+          }
         }
-      }
-    
       
-    }
+        
+      }
 
-    //Draw the grid
-    p.noStroke()
-    for(let i = 0;i < template_current_grid.length;i++){
-      for(let j = 0;j < template_current_grid[i].length;j++){
-        let cellType = templatePossibilities[template_current_grid[i][j]]
-        p.fill(cellType.r, cellType.g, cellType.b)
-        p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels+2, gridPixels+2)
-      }  
+      //Draw the grid
+      for(let i = 0;i < template_current_grid.length;i++){
+        for(let j = 0;j < template_current_grid[i].length;j++){
+          let cellType = templatePossibilities[template_current_grid[i][j]]
+          p.noStroke()
+          p.fill(cellType.r, cellType.g, cellType.b)
+          p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
+
+        }  
+      }
+
     }
   };
 
@@ -273,23 +375,98 @@ var sketch_example = function(p) {
     p.createCanvas(500, 500);
     p.rectMode(p.CENTER)
     p.frameRate(30)
+    p.smooth()
   };
 
   p.draw = function() {
-    p.background(0, 255, 0);
+    p.background(70, 77, 77);
     
-    let gridPixels = p.width / output_possibility_grid.length
-
+    
     //Draw the grid
     p.noStroke()
-    for(let i = 0;i < output_possibility_grid.length;i++){
-      for(let j = 0;j < output_possibility_grid[i].length;j++){
-        let cellType = templatePossibilities[output_possibility_grid[i][j]]
-        p.fill(cellType.r, cellType.g, cellType.b)
-        p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels+2, gridPixels+2)
-      }  
+
+    //TODO only if T2s possibility grid is developed
+    if(WFC_TEMPLATE_2){
+
+
+      let gridPixels = p.width / WFC_TEMPLATE_2.output_possibility_grid.length
+      let possibilitySquaresPixels = gridPixels / 4
+
+
+      
+      //Paint brush when mouse down
+      if(p.mouseIsPressed){
+        
+        
+
+        
+      }
+
+
+      if(WFC_TEMPLATE_2.output_possibility_grid){
+
+        for(let i = 0;i < WFC_TEMPLATE_2.output_possibility_grid.length;i++){
+          for(let j = 0;j < WFC_TEMPLATE_2.output_possibility_grid[i].length;j++){
+
+            let gridOutputPossibility = WFC_TEMPLATE_2.output_possibility_grid[i][j]
+            
+            //Draw one large big square
+            if(gridOutputPossibility.possibleValsLeft.length < 2){
+              let cellType = templatePossibilities[gridOutputPossibility.possibleValsLeft[0]];
+              p.noStroke();
+              p.fill(cellType.r, cellType.g, cellType.b)
+              p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
+            }
+            //Draw a bunch of possibilities
+            else{
+              for(let k = 0;k < gridOutputPossibility.possibleValsLeft.length;k++){
+                let cellType = templatePossibilities[gridOutputPossibility.possibleValsLeft[k]];
+                p.noStroke();
+                p.fill(cellType.r, cellType.g, cellType.b)
+                p.rect(
+                  i*gridPixels + possibilitySquaresPixels/2 + (k%4)*possibilitySquaresPixels, 
+                  j*gridPixels + possibilitySquaresPixels/2 + Math.floor(k/4)*possibilitySquaresPixels, 
+                  possibilitySquaresPixels, possibilitySquaresPixels
+                )
+                
+              }
+              p.noFill()
+              p.stroke(255)
+              p.strokeWeight(1)
+              p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
+            }
+            
+            
+              
+            
+            
+          }  
+        }
+      }
+
     }
+
+    
   };
+
+  p.mouseClicked = function(){
+    if(WFC_TEMPLATE_2){
+
+      let gridPixels = p.width / WFC_TEMPLATE_2.output_possibility_grid.length
+      let firstInd = Math.floor(p.mouseX / gridPixels)
+      let secondInd = Math.floor(p.mouseY / gridPixels)
+
+      if(WFC_TEMPLATE_2.output_possibility_grid[firstInd]){
+        if(secondInd < WFC_TEMPLATE_2.output_possibility_grid[firstInd].length){
+          WFC_manualCollapse(WFC_TEMPLATE_2, firstInd, secondInd, template_ui_paintBrush)
+        }
+      }
+      
+    }
+    
+  };
+
+
 };
 
 var node_example = document.createElement("div");
