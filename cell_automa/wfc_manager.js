@@ -184,21 +184,25 @@ function WFC_kernelAttemptFitInAnyPosition(WFC_2, x, y, kernel){
 
         
       let thisVariantIsPossible = true;
+      let howManyNonAmbiguousPartsInThisPossibility = 0
       for(let i = 0;i < kernel.length;i++){
         for(let j = 0;j < kernel[i].length;j++){
           if(WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft.indexOf(kernel[i][j]) < 0){
             thisVariantIsPossible = false;  
           }
+          else{
+            if(WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft.length === 1)
+            howManyNonAmbiguousPartsInThisPossibility++
+          }
         }
       }
 
       //Yes the kernel at this position made it through as a variant, now set the possible values
-      if(thisVariantIsPossible){
+      if(thisVariantIsPossible && howManyNonAmbiguousPartsInThisPossibility > 0){
         for(let i = 0;i < kernel.length;i++){
           for(let j = 0;j < kernel[i].length;j++){
-  
             WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft = [kernel[i][j]]
-            WFC_addCellsOfInterestAroundThisCell(WFC_2, farLeftX+i, farTopY+j)//Find the one around it
+            WFC_addCellsOfInterestAroundThisCell(WFC_2, farLeftX+i, farTopY+j)
           }
         }
 
@@ -286,7 +290,7 @@ function WFC_forceCollapseNextInterestingCell(WFC_2){
 
 //Kinda old funcs
 //_____________________________________________
-
+/*
 function WFC_refreshPossibilitiesBasedOnKernels(WFC_2, x, y){
 
   //Each index is literally the ID of the thing being placed
@@ -356,7 +360,7 @@ function WFC_collapseNextCells(WFC_2){
   
   return WFC_2.cells_of_interest.length
 }
-
+*/
 
 
 

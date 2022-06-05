@@ -86,7 +86,7 @@ function stepExistingT2(WFC_2){
 function stepExistingT2_80(WFC_2){
   // console.log('interests:')
   // console.log(JSON.stringify(WFC_2.cells_of_interest))
-  for(let j = 0;j < 80;j++){
+  for(let j = 0;j < 280;j++){
     let resultingAmountOfInterestingCells = 
       WFC_forceCollapseNextInterestingCell(WFC_2)
     updateOutputGeneratorUI(WFC_2)
