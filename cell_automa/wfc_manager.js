@@ -16,18 +16,25 @@ var templatePossibilities = [
 ]
 
 //Template variables
-var template_grid_size = 2
-var template_kernel_size = 1
-var template_ui_paintBrush = 1
-var template_current_grid = [[0,0],[0,0]]
+var template_grid_size = 8
+var template_kernel_size = 3
+var template_ui_paintBrush = 0
+var template_current_grid = [
+  [0,0,0,0,0,0,0,0],
+  [0,2,2,0,2,2,0,0],
+  [0,2,2,0,2,2,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,2,2,0],
+  [0,2,2,0,0,2,2,0],
+  [0,2,2,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0]
+]
 
 var WFC_TEMPLATE_2 = null;//WFC_initGenerator();
 
 
 //Output generation variables
-var output_seed = "googoogaga1"
-var output_cr = new CustomRandom(""+output_seed,  1);
-var output_grid_size = 2
+var output_grid_size = 28
 
 
 
@@ -129,12 +136,22 @@ function WFC_initGenerator(WFC_1, output_grid_size, randoSeed){
         cellOutputPossibilty.possibleValsLeft[k] = T2.t1.possible_values[k];
       }
 
-      //Adding in the kernels punch card
-      cellOutputPossibilty.plugsLeft = []
+      //Adding in the kernels punch card - list of kernel sizes and each index inside the list that correlates w all the kernels
+      cellOutputPossibilty.topLeftOfKernelsLeft = new Array(T2.t1.kernels.length)
+      for(let ii = 0;ii < cellOutputPossibilty.topLeftOfKernelsLeft.length;ii++){
+        let localIndicesOfKernels = new Array(T2.t1.kernels[ii].ks.length)
+        for(let jj = 0;jj < localIndicesOfKernels.length;jj++){
+          localIndicesOfKernels[jj] = jj
+        }
+        cellOutputPossibilty.topLeftOfKernelsLeft[ii] = localIndicesOfKernels
+      }
       
       
       T2.output_possibility_grid[i][j] = cellOutputPossibilty;//{possibleValsLeft: [1,9,18], plugsLeft:[]}
 
+      // if(i === 8 && j === 8){
+      //   console.log(JSON.stringify(T2.output_possibility_grid[i][j]))
+      // }
     }
   }
   
@@ -161,57 +178,57 @@ function WFC_manualCollapse(WFC_2, x, y, value){
 
 function WFC_kernelAttemptFitInAnyPosition(WFC_2, x, y, kernel){
 
-  let kernelCombinations = kernel.length * kernel[0].length
-  let kernelPositionsOffset = Math.floor(WFC_2.cr.random() * kernelCombinations)
-
   //Check every angle of every kernel
-  for(let bbb = 0;bbb < kernelCombinations;bbb++){
-    let b = (bbb+kernelPositionsOffset) % kernelCombinations//The offset
+  //let kernelCombinations = kernel.length * kernel[0].length
+  //let kernelPositionsOffset = Math.floor(WFC_2.cr.random() * kernelCombinations)
+  //for(let bbb = 0;bbb < kernelCombinations;bbb++){
+  //let b = (bbb+kernelPositionsOffset) % kernelCombinations//The offset
+  let b = 0
+  //Modify position of the kernel
+  let offX = b % kernel.length;               //start kernel this far from the left
+  let offY = Math.floor(b / kernel[0].length) //start kernel this far from the top
+  let farLeftX = x-offX //must be at least 0
+  let farRightX = x-offX+kernel.length-1//must be smaller than width length
+  let farTopY = y-offY //must be at least 0
+  let farDownY = y-offY+kernel[0].length-1//must be smaller than width length
 
-    //Modify position of the kernel
-    let offX = b % kernel.length;               //start kernel this far from the left
-    let offY = Math.floor(b / kernel[0].length) //start kernel this far from the top
-    let farLeftX = x-offX //must be at least 0
-    let farRightX = x-offX+kernel.length-1//must be smaller than width length
-    let farTopY = y-offY //must be at least 0
-    let farDownY = y-offY+kernel[0].length-1//must be smaller than width length
+  //Make sure this variation of the kernel is in bounds
+  if(farLeftX > -1 && 
+    farRightX < WFC_2.output_possibility_grid.length && 
+    farTopY > -1 && 
+    farDownY < WFC_2.output_possibility_grid[farLeftX].length){
 
-    //Make sure this variation of the kernel is in bounds
-    if(farLeftX > -1 && 
-      farRightX < WFC_2.output_possibility_grid.length && 
-      farTopY > -1 && 
-      farDownY < WFC_2.output_possibility_grid[farLeftX].length){
+    
+    //Count all the selected squares
+    let thisVariantIsPossible = true;
+    let howManyNonAmbiguousPartsInThisPossibility = 0
+    for(let i = 0;i < kernel.length;i++){
+      for(let j = 0;j < kernel[i].length;j++){
+        if(WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft.indexOf(kernel[i][j]) < 0){
+          thisVariantIsPossible = false;  
+        }
+        else{
+          if(WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft.length === 1)
+          howManyNonAmbiguousPartsInThisPossibility++
+        }
+      }
+    }
 
-        
-      let thisVariantIsPossible = true;
-      let howManyNonAmbiguousPartsInThisPossibility = 0
+    //Yes the kernel at this position made it through as a variant, now set the possible values
+    if(thisVariantIsPossible && howManyNonAmbiguousPartsInThisPossibility > -1){
       for(let i = 0;i < kernel.length;i++){
         for(let j = 0;j < kernel[i].length;j++){
-          if(WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft.indexOf(kernel[i][j]) < 0){
-            thisVariantIsPossible = false;  
-          }
-          else{
-            if(WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft.length === 1)
-            howManyNonAmbiguousPartsInThisPossibility++
-          }
+          WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft = [kernel[i][j]]
+          WFC_addCellsOfInterestAroundThisCell(WFC_2, farLeftX+i, farTopY+j)
         }
       }
 
-      //Yes the kernel at this position made it through as a variant, now set the possible values
-      if(thisVariantIsPossible && howManyNonAmbiguousPartsInThisPossibility > 0){
-        for(let i = 0;i < kernel.length;i++){
-          for(let j = 0;j < kernel[i].length;j++){
-            WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft = [kernel[i][j]]
-            WFC_addCellsOfInterestAroundThisCell(WFC_2, farLeftX+i, farTopY+j)
-          }
-        }
-
-        return {st: "woo"}
-      }
-      //else{}//Just move on to the next position of this kernel
-      
+      return {st: "woo"}
     }
+    //else{}//Just move on to the next position of this kernel
+    
   }
+  //}//uncomment this to hold the for loop of checking all n*n different permutations of the thing
 
   //No combination of variants on this kernel at x,y could be matched succesfully
   return null;
@@ -229,6 +246,9 @@ function WFC_kernelAttemptFitInAnyPosition(WFC_2, x, y, kernel){
 //Go through all kernels and try to find one possible one that fits -
 //manually change 
 function WFC_attemptHardPlaceOfRandomKernel(WFC_2, x, y){
+
+  //TODO maybe be looping through this cell's: "topLeftOfKernelsLeft" and be subtracting from there for efficiency
+  //TODO which means turning these boys into while loops
 
   //random starting indices in the kernel
   let startingKernelOffset = Math.floor(WFC_2.cr.random() * WFC_2.t1.kernels.length)
@@ -268,7 +288,7 @@ function WFC_forceCollapseNextInterestingCell(WFC_2){
     let possibilitiesBeforeChange = 0 + gridCellObject.possibleValsLeft.length
 
 
-    WFC_attemptHardPlaceOfRandomKernel(WFC_2, xell.x, xell.y);
+    WFC_attemptHardPlaceOfRandomKernel(WFC_2, xell.x, xell.y);//Which should amount to a random distribution
     //^if this succeeds will lock in several cells around xell.x,xell.y the size of the KERNEL it chooses
 
     if(possibilitiesBeforeChange !== gridCellObject.possibleValsLeft.length){
