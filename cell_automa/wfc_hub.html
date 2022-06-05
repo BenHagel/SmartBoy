@@ -32,7 +32,13 @@
 				z-index:2; 
 				display: inline-flex;
 				background-color: rgb(23, 23, 46);
-				padding:15px; 
+				padding:15px;
+				min-height: 650px;
+			}
+			#templateKernelVisualsLocation{
+				position: fixed;
+				top: 340px;
+				left: 30px;
 			}
 			.canvas-container{
 
@@ -98,7 +104,8 @@
 				<br>
 				<h3>Control</h3>
 				<button onclick="propogateNewTemplateObjectWRandomSeed()">refresh all template</button>
-				<button onclick="stepExistingT2(WFC_TEMPLATE_2)">step current WFC 2</button>
+				<button onclick="stepExistingT2(WFC_TEMPLATE_2)">step WFC 2</button>
+				<button onclick="stepExistingT2_80(WFC_TEMPLATE_2)">80(x_step WFC 2</button>
 
 				<br>
 				<h3>Newest Templte</h3>
@@ -111,6 +118,9 @@
 			</div>
 
 			<div id="outputCanvasLocation" class="canvas-container"></div>
+
+			
+			<div id="templateKernelVisualsLocation" class="canvas-container"></div>
 
 			<!-- <br><br>
 			<div id="newestTemplateInfo"> </div> -->
@@ -129,6 +139,7 @@
 		
 		<script src="wfc_interface.js"></script>
 		<script src="wfc_manager.js"></script>
+		<script src="wfc_p5js_canvases.js"></script>
 		<!-- <script src="quadtree_test.js"></script> -->
 
 	</body>

@@ -52,7 +52,6 @@ function updateOutputSize(){
 
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////Get generating the output
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,18 +68,34 @@ function propogateNewTemplateObjectWRandomSeed(){
   document.getElementById("possibleValsFound").innerHTML = JSON.stringify(WFC_TEMPLATE_1.possible_values)
 
   WFC_TEMPLATE_2 = WFC_initGenerator(WFC_TEMPLATE_1, output_grid_size, "randoSeed1_0")
-  document.getElementById("stepCountDisplay").innerHTML = WFC_TEMPLATE_2.elapsed_steps
-  document.getElementById("nextCellsDisplay").innerHTML = WFC_TEMPLATE_2.cells_of_interest.length
+
+  updateOutputGeneratorUI(WFC_TEMPLATE_2)
 
 }
 
 
 
 function stepExistingT2(WFC_2){
-
-  //console.log(JSON.stringify(WFC_2))
-  WFC_collapseNextCells(WFC_2)
+  // console.log('interests:')
+  // console.log(JSON.stringify(WFC_2.cells_of_interest))
   
+  let resultingAmountOfInterestingCells = WFC_forceCollapseNextInterestingCell(WFC_2)//WFC_collapseNextCells(WFC_2)// 
+
+  updateOutputGeneratorUI(WFC_2)
+}
+function stepExistingT2_80(WFC_2){
+  // console.log('interests:')
+  // console.log(JSON.stringify(WFC_2.cells_of_interest))
+  for(let j = 0;j < 80;j++){
+    let resultingAmountOfInterestingCells = 
+      WFC_forceCollapseNextInterestingCell(WFC_2)
+    updateOutputGeneratorUI(WFC_2)
+  }
+}
+
+
+
+function updateOutputGeneratorUI(WFC_2){
   document.getElementById("stepCountDisplay").innerHTML = WFC_2.elapsed_steps
   document.getElementById("nextCellsDisplay").innerHTML = WFC_2.cells_of_interest.length
 }

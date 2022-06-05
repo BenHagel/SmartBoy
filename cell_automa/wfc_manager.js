@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////Test code
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15,14 +5,14 @@ var WFC_TEMPLATE_1 = null;//WFC_getKernels();
 var templatePossibilities = [
   {key: "0", r: 0, g: 0, b: 0},
   {key: "1", r: 255, g: 255, b: 255},
-  {key: "2", r: 244, g: 11, b: 254},
-  {key: "3", r: 136, g: 0, b: 21},
+  {key: "2", r: 60, g: 60, b: 255},
+  {key: "3", r: 163, g: 73, b: 164},
   {key: "4", r: 255, g: 2, b: 2},
   {key: "5", r: 255, g: 127, b: 9},
   {key: "6", r: 255, g: 242, b: 0},
   {key: "7", r: 34, g: 177, b: 76},
   {key: "8", r: 0, g: 162, b: 232},
-  {key: "9", r: 152, g: 134, b: 3}
+  {key: "9", r: 129, g: 60, b: 18}
 ]
 
 //Template variables
@@ -140,16 +130,10 @@ function WFC_initGenerator(WFC_1, output_grid_size, randoSeed){
       }
 
       //Adding in the kernels punch card
-      cellOutputPossibilty.kernelsLeft = new Array(T2.t1.kernels.length)
-      for(let k = 0;k < T2.t1.kernels.length;k++){
-
-        let lengthArray = new Array(T2.t1.kernels[k].ks.length)
-        for(let b = 0;b < lengthArray.length;b++) lengthArray[b] = b;
-
-        cellOutputPossibilty.kernelsLeft[k] = lengthArray;
-      }
+      cellOutputPossibilty.plugsLeft = []
       
-      T2.output_possibility_grid[i][j] = cellOutputPossibilty;//{possibleValsLeft: [1,9,18], kernelsLeft:[[1,4,7], [0,1,2]]}
+      
+      T2.output_possibility_grid[i][j] = cellOutputPossibilty;//{possibleValsLeft: [1,9,18], plugsLeft:[]}
 
     }
   }
@@ -170,22 +154,19 @@ function WFC_addCellsOfInterestAroundThisCell(WFC_2, x, y){
 
 function WFC_manualCollapse(WFC_2, x, y, value){
   WFC_2.output_possibility_grid[x][y].possibleValsLeft = [value]
-  WFC_2.output_possibility_grid[x][y].kernelsLeft = []
   //Add the cells of interest around this wfc
   WFC_addCellsOfInterestAroundThisCell(WFC_2, x, y);
 }
 
 
-function WFC_kernelAtAllValidHere(WFC_2, x, y, kernel){
-  console.log("kernel checkinL")
-  console.log(kernel)
+function WFC_kernelAttemptFitInAnyPosition(WFC_2, x, y, kernel){
 
   let kernelCombinations = kernel.length * kernel[0].length
-
-  let possibilitiesFromThisKernelSoFar = []
+  let kernelPositionsOffset = Math.floor(WFC_2.cr.random() * kernelCombinations)
 
   //Check every angle of every kernel
-  for(let b = 0;b < kernelCombinations;b++){
+  for(let bbb = 0;bbb < kernelCombinations;bbb++){
+    let b = (bbb+kernelPositionsOffset) % kernelCombinations//The offset
 
     //Modify position of the kernel
     let offX = b % kernel.length;               //start kernel this far from the left
@@ -201,37 +182,114 @@ function WFC_kernelAtAllValidHere(WFC_2, x, y, kernel){
       farTopY > -1 && 
       farDownY < WFC_2.output_possibility_grid[farLeftX].length){
 
-      //Kernel template matches the possibilities for each number around it
+        
       let thisVariantIsPossible = true;
-      let theValueDerivedFromThisKernelVariant = null
       for(let i = 0;i < kernel.length;i++){
         for(let j = 0;j < kernel[i].length;j++){
-
           if(WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft.indexOf(kernel[i][j]) < 0){
             thisVariantIsPossible = false;  
-          }
-          else if(farLeftX+i === x && farTopY+j === y){
-            theValueDerivedFromThisKernelVariant = kernel[i][j]
           }
         }
       }
 
-      if(thisVariantIsPossible){//then also the value derived mustve been set so that's the value this kernel proves
-        if(possibilitiesFromThisKernelSoFar.indexOf(theValueDerivedFromThisKernelVariant) < 0){
-          possibilitiesFromThisKernelSoFar.push(theValueDerivedFromThisKernelVariant)
+      //Yes the kernel at this position made it through as a variant, now set the possible values
+      if(thisVariantIsPossible){
+        for(let i = 0;i < kernel.length;i++){
+          for(let j = 0;j < kernel[i].length;j++){
+  
+            WFC_2.output_possibility_grid[farLeftX+i][farTopY+j].possibleValsLeft = [kernel[i][j]]
+            WFC_addCellsOfInterestAroundThisCell(WFC_2, farLeftX+i, farTopY+j)//Find the one around it
+          }
         }
+
+        return {st: "woo"}
       }
       //else{}//Just move on to the next position of this kernel
       
     }
   }
 
-  return possibilitiesFromThisKernelSoFar;
+  //No combination of variants on this kernel at x,y could be matched succesfully
+  return null;
 }
 
 
+
+
+
+
+
+//The New funcs
+//_________________________________________
+
+//Go through all kernels and try to find one possible one that fits -
+//manually change 
+function WFC_attemptHardPlaceOfRandomKernel(WFC_2, x, y){
+
+  //random starting indices in the kernel
+  let startingKernelOffset = Math.floor(WFC_2.cr.random() * WFC_2.t1.kernels.length)
+  for(let ii = 0;ii < WFC_2.t1.kernels.length;ii++){
+    let i = (startingKernelOffset+ii) % WFC_2.t1.kernels.length
+    
+    let startingInsideKernel = Math.floor(WFC_2.cr.random() * WFC_2.t1.kernels[i].ks.length)
+    for(let jj = 0;jj < WFC_2.t1.kernels[i].ks.length;jj++){
+      let j = (startingInsideKernel+jj) % WFC_2.t1.kernels[i].ks.length
+
+      let kernToTry = WFC_2.t1.kernels[i].ks[j]
+      
+      let resultAndMeta = WFC_kernelAttemptFitInAnyPosition(WFC_2, x, y, kernToTry)
+      if(resultAndMeta) return true
+    }
+  }
+
+  return false
+  //TODO kernel size gets too big - may not be sufficient to only add the 4 cells around this cell to the INTERESTING ARRAY
+  //May have to insted add all the cells that this kernel locked in
+}
+
+
+
+function WFC_forceCollapseNextInterestingCell(WFC_2){
+
+
+  //console.log("cells_of_interest.length", WFC_2.cells_of_interest.length)
+
+  //Get next interesting cell
+  if(WFC_2.cells_of_interest.length > 0){
+    let xell = WFC_2.cells_of_interest.shift()
+
+    let gridCellObject = WFC_2.output_possibility_grid[xell.x][xell.y]
+    if(gridCellObject.possibleValsLeft.length < 2)  return null;
+
+    let possibilitiesBeforeChange = 0 + gridCellObject.possibleValsLeft.length
+
+
+    WFC_attemptHardPlaceOfRandomKernel(WFC_2, xell.x, xell.y);
+    //^if this succeeds will lock in several cells around xell.x,xell.y the size of the KERNEL it chooses
+
+    if(possibilitiesBeforeChange !== gridCellObject.possibleValsLeft.length){
+      //Add next cells of interest
+      WFC_addCellsOfInterestAroundThisCell(WFC_2, xell.x, xell.y);
+    }
+
+
+  }
+
+  
+  return null
+}
+
+
+
+
+
+
+//Kinda old funcs
+//_____________________________________________
+
 function WFC_refreshPossibilitiesBasedOnKernels(WFC_2, x, y){
 
+  //Each index is literally the ID of the thing being placed
   let posValsPunchCard = new Array(WFC_2.t1.possible_values.length)
   for(let i = 0;i < posValsPunchCard.length;i++){
     posValsPunchCard[i] = 0
@@ -245,11 +303,11 @@ function WFC_refreshPossibilitiesBasedOnKernels(WFC_2, x, y){
     for(let j = 0;j < kernels[i].ks.length;j++){
 
       let possibleValuesMadePossibleByKernel = 
-        WFC_kernelAtAllValidHere(WFC_2, x, y, kernels[i].ks[j])
+        WFC_kernelAttemptFitInAnyPosition(WFC_2, x, y, kernels[i].ks[j])
 
       //The possible values this kernel enables
       for(let u = 0;u < possibleValuesMadePossibleByKernel.length;u++){
-        posValsPunchCard[possibleValuesMadePossibleByKernel[u]] = 1//punch the hole
+        posValsPunchCard[WFC_2.t1.possible_values.indexOf(possibleValuesMadePossibleByKernel[u])] = 1//punch the hole
       }
 
     }
@@ -258,12 +316,12 @@ function WFC_refreshPossibilitiesBasedOnKernels(WFC_2, x, y){
   examiningGrid.possibleValsLeft = []
   for(let i = 0;i < posValsPunchCard.length;i++){
     if(posValsPunchCard[i] > 0){
-      examiningGrid.possibleValsLeft.push(i)
+      examiningGrid.possibleValsLeft.push(WFC_2.t1.possible_values[i])
     }
   }
 }
 
-function WFC_crossCheckRemainingKernels(WFC_2, x, y){
+function WFC_crossCheckAllKernelsAtCell(WFC_2, x, y){
 
   let gridCellObject = WFC_2.output_possibility_grid[x][y]
   if(gridCellObject.possibleValsLeft.length < 2) return null;
@@ -279,14 +337,19 @@ function WFC_crossCheckRemainingKernels(WFC_2, x, y){
   }
 }
 
+
 function WFC_collapseNextCells(WFC_2){
 
   let starting_cells = WFC_2.cells_of_interest.length;// = null
 
   while(starting_cells > 0){
     let xell = WFC_2.cells_of_interest.shift()
-    WFC_crossCheckRemainingKernels(WFC_2, xell.x, xell.y)
+    WFC_crossCheckAllKernelsAtCell(WFC_2, xell.x, xell.y)
     starting_cells--
+
+
+    //Add the cells of interest around this wfc
+    WFC_addCellsOfInterestAroundThisCell(WFC_2, xell.x, xell.y);
   }
 
   WFC_2.elapsed_steps += 1;
@@ -300,175 +363,3 @@ function WFC_collapseNextCells(WFC_2){
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Add P5JS
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////P5 JS bullshi
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-//Create the template canvas
-var sketch_template = function(p) {
-
-  p.setup = function() {
-    p.createCanvas(300, 300);
-    p.rectMode(p.CENTER)
-    p.frameRate(30)
-    p.smooth()
-  };
-
-  p.draw = function() {
-    p.background(34, 0, 0);
-    if(template_current_grid){
-      //console.log(p.mouseX)
-      let gridPixels = p.width / template_current_grid.length
-
-      //Paint brush when mouse down
-      if(p.mouseIsPressed){
-        let firstInd = Math.floor(p.mouseX / gridPixels)
-        let secondInd = Math.floor(p.mouseY / gridPixels)
-        if(template_current_grid[firstInd]){
-          if(secondInd < template_current_grid[firstInd].length){
-            template_current_grid[firstInd][secondInd] = template_ui_paintBrush
-          }
-        }
-      
-        
-      }
-
-      //Draw the grid
-      for(let i = 0;i < template_current_grid.length;i++){
-        for(let j = 0;j < template_current_grid[i].length;j++){
-          let cellType = templatePossibilities[template_current_grid[i][j]]
-          p.noStroke()
-          p.fill(cellType.r, cellType.g, cellType.b)
-          p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
-
-        }  
-      }
-
-    }
-  };
-
-  p.keyPressed = function(){
-    for(let i = 0;i < templatePossibilities.length;i++){
-      if(templatePossibilities[i].key === ""+p.key){
-        template_ui_paintBrush = i
-        break;
-      }
-    }
-
-  };
-};
-
-var node_template = document.createElement("div");
-var TEMPLATE_P5 = new p5(sketch_template, node_template);
-document.getElementById("templateCanvasLocation").appendChild(node_template);
-
-
-
-//Create the example canvas
-var sketch_example = function(p) {
-
-  p.setup = function() {
-    p.createCanvas(500, 500);
-    p.rectMode(p.CENTER)
-    p.frameRate(30)
-    p.smooth()
-  };
-
-  p.draw = function() {
-    p.background(70, 77, 77);
-    
-    
-    //Draw the grid
-    p.noStroke()
-
-    //TODO only if T2s possibility grid is developed
-    if(WFC_TEMPLATE_2){
-
-
-      let gridPixels = p.width / WFC_TEMPLATE_2.output_possibility_grid.length
-      let possibilitySquaresPixels = gridPixels / 4
-
-
-      
-      //Paint brush when mouse down
-      if(p.mouseIsPressed){
-        
-        
-
-        
-      }
-
-
-      if(WFC_TEMPLATE_2.output_possibility_grid){
-
-        for(let i = 0;i < WFC_TEMPLATE_2.output_possibility_grid.length;i++){
-          for(let j = 0;j < WFC_TEMPLATE_2.output_possibility_grid[i].length;j++){
-
-            let gridOutputPossibility = WFC_TEMPLATE_2.output_possibility_grid[i][j]
-            
-            //Draw one large big square
-            if(gridOutputPossibility.possibleValsLeft.length < 2){
-              let cellType = templatePossibilities[gridOutputPossibility.possibleValsLeft[0]];
-              p.noStroke();
-              p.fill(cellType.r, cellType.g, cellType.b)
-              p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
-            }
-            //Draw a bunch of possibilities
-            else{
-              for(let k = 0;k < gridOutputPossibility.possibleValsLeft.length;k++){
-                let cellType = templatePossibilities[gridOutputPossibility.possibleValsLeft[k]];
-                p.noStroke();
-                p.fill(cellType.r, cellType.g, cellType.b)
-                p.rect(
-                  i*gridPixels + possibilitySquaresPixels/2 + (k%4)*possibilitySquaresPixels, 
-                  j*gridPixels + possibilitySquaresPixels/2 + Math.floor(k/4)*possibilitySquaresPixels, 
-                  possibilitySquaresPixels, possibilitySquaresPixels
-                )
-                
-              }
-              p.noFill()
-              p.stroke(255)
-              p.strokeWeight(1)
-              p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
-            }
-            
-            
-              
-            
-            
-          }  
-        }
-      }
-
-    }
-
-    
-  };
-
-  p.mouseClicked = function(){
-    if(WFC_TEMPLATE_2){
-
-      let gridPixels = p.width / WFC_TEMPLATE_2.output_possibility_grid.length
-      let firstInd = Math.floor(p.mouseX / gridPixels)
-      let secondInd = Math.floor(p.mouseY / gridPixels)
-
-      if(WFC_TEMPLATE_2.output_possibility_grid[firstInd]){
-        if(secondInd < WFC_TEMPLATE_2.output_possibility_grid[firstInd].length){
-          WFC_manualCollapse(WFC_TEMPLATE_2, firstInd, secondInd, template_ui_paintBrush)
-        }
-      }
-      
-    }
-    
-  };
-
-
-};
-
-var node_example = document.createElement("div");
-var EXAMPLE_P5 = new p5(sketch_example, node_example);
-document.getElementById("outputCanvasLocation").appendChild(node_example);
