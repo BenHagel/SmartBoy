@@ -140,22 +140,25 @@ var sketch_template = function(p) {
               //Draw a bunch of possibilities
               else{
                 let diffPossibilitiesToBeDrawn = gridOutputPossibility.possibleValsLeft.length
-                let lengthOfEachPossibility = (gridPixels) / diffPossibilitiesToBeDrawn
   
-                for(let k = gridOutputPossibility.possibleValsLeft.length-1;k > -1;k--){
+                let totalR = 0
+                let totalG = 0
+                let totalB = 0
+
+                for(let k = diffPossibilitiesToBeDrawn-1;k > -1;k--){
                   let cellType = templatePossibilities[gridOutputPossibility.possibleValsLeft[k]];
-                  p.noStroke();
-                  p.fill(cellType.r, cellType.g, cellType.b)
-                  p.ellipse(
-                    i*gridPixels + gridPixels/2, 
-                    j*gridPixels + gridPixels/2, 
-                    (k+1)*lengthOfEachPossibility, (k+1)*lengthOfEachPossibility
-                  )
-                  
+                  totalR += cellType.r
+                  totalG += cellType.g
+                  totalB += cellType.b
                 }
-                p.noFill()
-                p.stroke(255)
-                p.strokeWeight(1)
+
+
+                p.fill(
+                  Math.floor(totalR/diffPossibilitiesToBeDrawn), 
+                  Math.floor(totalG/diffPossibilitiesToBeDrawn), 
+                  Math.floor(totalB/diffPossibilitiesToBeDrawn)
+                )
+                p.noStroke()
                 p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
               }
               

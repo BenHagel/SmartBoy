@@ -81,6 +81,38 @@ function stepExistingT2(WFC_2){
   
   let resultingAmountOfInterestingCells = WFC_forceCollapseNextInterestingCell(WFC_2)//WFC_collapseNextCells(WFC_2)// 
 
+  //Option: switch the reading of the kernels to wrapping: ON/OFF
+  //For kernels that are 3x3 (nxn)
+  //Start with one definite cell (manuel)
+  //Add cell to list of interesting cells (manuel)
+
+  //For each cell of interest
+  //  do a nxn kernel check so an area of : (2n-1)*(2n-1), for each cell that changed:
+  //    if # of possible krnl's change - recompute possible values,
+  //    if # of possible values change - add it to cell of interest
+
+  //Example n = 3 - which cells have kernel objects:
+  //  output: 8x8
+  /*
+  OOOOOOXX
+  OOOOOOXX
+  OOOOOOXX
+  OOOOOOXX
+  OOOOOOXX
+  OOOOOOXX
+  XXXXXXXX
+  XXXXXXXX
+  */
+ //O = has an nxn kernel object (3x3)
+ //X = has no nxn kernel object (UNLESS WRAP IS ENABLED)
+
+ //If cellsof interest runs out - find lowest entropy cell and pick random value
+ //If cells of interest runs - and now cells w >1 entropy - you're done!
+ 
+ 
+
+  
+
   updateOutputGeneratorUI(WFC_2)
 }
 function stepExistingT2_80(WFC_2){
