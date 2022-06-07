@@ -79,12 +79,13 @@ function stepExistingT2(WFC_2){
   // console.log('interests:')
   // console.log(JSON.stringify(WFC_2.cells_of_interest))
   
-  let resultingAmountOfInterestingCells = WFC_forceCollapseNextInterestingCell(WFC_2)//WFC_collapseNextCells(WFC_2)// 
+  let resultingAmountOfInterestingCells = WFC_examineNextInterestingCell(WFC_2) 
 
   //Option: switch the reading of the kernels to wrapping: ON/OFF
   //For kernels that are 3x3 (nxn)
-  //Start with one definite cell (manuel)
-  //Add cell to list of interesting cells (manuel)
+  //Manual start off:::
+  //  Start with one definite cell and change its possible values to something certain
+  //  Add cell to list of interesting cells
 
   //For each cell of interest
   //  do a nxn kernel check so an area of : (2n-1)*(2n-1), for each cell that changed:
@@ -120,7 +121,7 @@ function stepExistingT2_80(WFC_2){
   // console.log(JSON.stringify(WFC_2.cells_of_interest))
   for(let j = 0;j < 280;j++){
     let resultingAmountOfInterestingCells = 
-      WFC_forceCollapseNextInterestingCell(WFC_2)
+      WFC_examineNextInterestingCell(WFC_2)
     updateOutputGeneratorUI(WFC_2)
   }
 }
