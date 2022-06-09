@@ -168,6 +168,20 @@ var sketch_template = function(p) {
               
             }  
           }
+
+
+          //what u highligting
+          output_ui_kernel_x = Math.floor(p.mouseX / gridPixels)
+          output_ui_kernel_y = Math.floor(p.mouseY / gridPixels)
+
+          document.getElementById("outputMouseXAndY").innerHTML = output_ui_kernel_x + "  " + output_ui_kernel_y
+
+          p.noFill()
+          p.strokeWeight(2)
+          if(output_ui_atleast_one_kernel_good) p.stroke(255)
+          else p.stroke(255, 0, 0)
+          p.rect(output_ui_kernel_x*gridPixels + (gridPixels*template_kernel_size)/2, output_ui_kernel_y*gridPixels + (gridPixels*template_kernel_size)/2,
+           (gridPixels*template_kernel_size), (gridPixels*template_kernel_size))
         }
   
       }
@@ -181,10 +195,18 @@ var sketch_template = function(p) {
         let gridPixels = p.width / WFC_TEMPLATE_2.output_possibility_grid.length
         let firstInd = Math.floor(p.mouseX / gridPixels)
         let secondInd = Math.floor(p.mouseY / gridPixels)
+
+        if(p.mouseX < 0) return null
+        if(p.mouseX > p.width-1) return null
+        if(p.mouseY < 0) return null
+        if(p.mouseY > p.height-1) return null
   
         if(WFC_TEMPLATE_2.output_possibility_grid[firstInd]){
           if(secondInd < WFC_TEMPLATE_2.output_possibility_grid[firstInd].length){
-            WFC_manualCollapse(WFC_TEMPLATE_2, firstInd, secondInd, template_ui_paintBrush)
+
+            if(WFC_TEMPLATE_2.output_possibility_grid[firstInd][secondInd].possibleValsLeft.length > 1)
+              WFC_manualCollapse(WFC_TEMPLATE_2, firstInd, secondInd, template_ui_paintBrush)
+              
           }
         }
         
@@ -227,8 +249,35 @@ var sketch_template = function(p) {
             p.rotate(Math.sin(p.frameCount/20)*0.1)
   
             let krn = WFC_TEMPLATE_1.kernels[i].ks[j]
+
+
+            
+            
+            //Is currently the section being highlighted
+            let sectionBeingHighlighted = true
+            if(WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x] && WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x][output_ui_kernel_y]){
+              let gridToCheck = WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x][output_ui_kernel_y]
+              for(let ax = 0;ax < krn.length;ax++){
+                for(let ay = 0;ay < krn[ax].length;ay++){
+                  if(WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x+ax]
+                    && WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x+ax][output_ui_kernel_y+ay] &&
+                    WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x+ax][output_ui_kernel_y+ay].possibleValsLeft.indexOf(krn[ax][ay]) < 0){
+
+                    sectionBeingHighlighted = false
+                  }
+                }
+              }
+
+              if(sectionBeingHighlighted){
+                output_ui_kernels_test_positive++
+                p.stroke(240, 0, 0)
+                p.strokeWeight(2)
+                p.noFill()
+                p.rect(kernelCellSize*krn.length/2 - kernelCellSize/2, kernelCellSize*krn[0].length/2 - kernelCellSize/2, kernelCellSize*krn.length, kernelCellSize*krn[0].length)
+              }
+            }
+
             p.noStroke()
-  
             for(let xx = 0;xx < krn.length;xx++){
               for(let yy = 0;yy < krn[xx].length;yy++){
                 let cellType = templatePossibilities[krn[xx][yy]];
@@ -250,6 +299,17 @@ var sketch_template = function(p) {
                                
   
       }
+
+
+
+      //Test the kernels testing postibe
+      if(output_ui_kernels_test_positive > 0){
+        output_ui_atleast_one_kernel_good = true
+      }
+      else{
+        output_ui_atleast_one_kernel_good = false
+      }
+      output_ui_kernels_test_positive = 0
     };
   
     p.keyPressed = function(){

@@ -36,9 +36,14 @@
 				min-height: 650px;
 			}
 			#templateKernelVisualsLocation{
-				position: fixed;
+				position: absolute;
 				top: 340px;
-				left: 30px;
+				left: 10px;
+			}
+			#outputMouseXAndY{
+				background-color: gray;
+				color: black;
+				min-width: 100px;
 			}
 			.canvas-container{
 
@@ -106,6 +111,7 @@
 				<button onclick="propogateNewTemplateObjectWRandomSeed()">refresh all template</button>
 				<button onclick="stepExistingT2(WFC_TEMPLATE_2)">step WFC 2</button>
 				<button onclick="stepExistingT2_80(WFC_TEMPLATE_2)">80(x_step WFC 2</button>
+				<button onclick="bruteForceT2CheckForMisses(WFC_TEMPLATE_2)">Brute Force Check For Misses</button>
 
 				<br>
 				<h3>Newest Templte</h3>
@@ -118,7 +124,7 @@
 			</div>
 
 			<div id="outputCanvasLocation" class="canvas-container"></div>
-
+			<div id="outputMouseXAndY">Hellp sir</div>
 			
 			<div id="templateKernelVisualsLocation" class="canvas-container"></div>
 

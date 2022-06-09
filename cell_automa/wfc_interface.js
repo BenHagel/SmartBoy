@@ -79,13 +79,13 @@ function stepExistingT2(WFC_2){
   // console.log('interests:')
   // console.log(JSON.stringify(WFC_2.cells_of_interest))
   
-  let resultingAmountOfInterestingCells = WFC_examineNextInterestingCell(WFC_2) 
+  let resultingAmountOfInterestingCells = WFC_collapseAllPossibleCells(WFC_2) 
 
   //Option: switch the reading of the kernels to wrapping: ON/OFF
   //For kernels that are 3x3 (nxn)
   //Manual start off:::
   //  Start with one definite cell and change its possible values to something certain
-  //  Add cell to list of interesting cells
+  //  Add cell to list of interesting cells (based on surround possible vals change all surrounding kernels)
 
   //For each cell of interest
   //  do a nxn kernel check so an area of : (2n-1)*(2n-1), for each cell that changed:
@@ -110,25 +110,79 @@ function stepExistingT2(WFC_2){
  //If cellsof interest runs out - find lowest entropy cell and pick random value
  //If cells of interest runs - and now cells w >1 entropy - you're done!
  
+ //TODO - Kernel parsing wraps
+ //TODO - WFC_reUpdatePossibleKernelsAroundCell wraps the window Line 317
  
+ //TODO lock in line 291 and make <2 possibility kernels the one - add changed cells to possible values
+ 
+
+ //TODO if cell of interest smaller than 0
+ //   loop through all and solidify all cells w only one possible kernel - add changed cells to possible values
 
   
 
+
+ ////X all  that, new plan
+ //cell of interest: do a run around sweep of all kernels directly offended by the NET
+ //casting the NET - where at every possible hole in the net (n*2-1)^2 checks its entropy distance from each kernel.
+ //Lowest one gets chosen - any cells that changed get added to cell of interest
+
   updateOutputGeneratorUI(WFC_2)
 }
+
+
+
+
 function stepExistingT2_80(WFC_2){
   // console.log('interests:')
   // console.log(JSON.stringify(WFC_2.cells_of_interest))
   for(let j = 0;j < 280;j++){
     let resultingAmountOfInterestingCells = 
-      WFC_examineNextInterestingCell(WFC_2)
+      WFC_collapseAllPossibleCells(WFC_2)
     updateOutputGeneratorUI(WFC_2)
   }
 }
 
 
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
 
 function updateOutputGeneratorUI(WFC_2){
   document.getElementById("stepCountDisplay").innerHTML = WFC_2.elapsed_steps
   document.getElementById("nextCellsDisplay").innerHTML = WFC_2.cells_of_interest.length
+}
+
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+function getCellsKernelEntropy(WFC_2, x, y){
+  let count = 0
+  let cel = WFC_2.output_possibility_grid[x][y]
+
+  for(let i = 0;i < cel.topLeftOfKernelsLeft.length;i++){
+    count += cel.topLeftOfKernelsLeft[i].length
+  }
+
+  return count
+}
+
+function getValsPossibleEntropy(WFC_2, x, y){
+  let count = 0;
+  let cel = WFC_2.output_possibility_grid[x][y]
+
+  return cel.possibleValsLeft.length
+}
+
+function bruteForceT2CheckForMisses(WFC_2){
+
+  let posValEnt = 0
+  for(let i = 0;i < WFC_2.output_possibility_grid.length;i++){
+    for(let j = 0;j < WFC_2.output_possibility_grid[i].length;j++){
+      posValEnt += getValsPossibleEntropy(WFC_2, i, j)
+    }
+  }
+  
+  console.log("positive value entropy:", posValEnt)
+
+
 }

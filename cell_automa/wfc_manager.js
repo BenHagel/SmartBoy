@@ -35,6 +35,10 @@ var WFC_TEMPLATE_2 = null;//WFC_initGenerator();
 
 //Output generation variables
 var output_grid_size = 28
+var output_ui_kernel_x = 0
+var output_ui_kernel_y = 0
+var output_ui_kernels_test_positive = 0
+var output_ui_atleast_one_kernel_good = false
 
 
 
@@ -147,7 +151,8 @@ function WFC_initGenerator(WFC_1, output_grid_size, randoSeed){
         cellOutputPossibilty.topLeftOfKernelsLeft[ii] = localIndicesOfKernels
       }
       
-      
+      //Adding the possibility  DISTRIBUTION for these vals
+
       T2.output_possibility_grid[i][j] = cellOutputPossibilty;//{possibleValsLeft: [1,9,18], plugsLeft:[]}
 
       // if(i === 8 && j === 8){
@@ -162,12 +167,24 @@ function WFC_initGenerator(WFC_1, output_grid_size, randoSeed){
   return T2;
 }
 
-function WFC_addCellsOfInterestAroundThisCell(WFC_2, x, y){
-  if(x > 0) WFC_2.cells_of_interest.push({x: x-1, y: y})
-  if(x < WFC_2.output_possibility_grid.length-1) WFC_2.cells_of_interest.push({x: x+1, y: y})
 
-  if(y > 0) WFC_2.cells_of_interest.push({x: x, y: y-1})
-  if(y < WFC_2.output_possibility_grid[0].length-1) WFC_2.cells_of_interest.push({x: x, y: y+1})
+
+
+
+
+
+
+//Utilities
+//____________________________________
+
+
+
+function WFC_addCellsOfInterestAroundThisCell(WFC_2, x, y){
+  WFC_2.cells_of_interest.push({x: (x-1+WFC_2.output_possibility_grid.length)%WFC_2.output_possibility_grid.length, y: y})
+  WFC_2.cells_of_interest.push({x: (x+1)%WFC_2.output_possibility_grid.length, y: y})
+
+  WFC_2.cells_of_interest.push({x: x, y: (y-1+WFC_2.output_possibility_grid[x].length)%WFC_2.output_possibility_grid[x].length})
+  WFC_2.cells_of_interest.push({x: x, y: (y+1)%WFC_2.output_possibility_grid[x].length})
 }
 
 function WFC_manualCollapse(WFC_2, x, y, value){
@@ -178,6 +195,428 @@ function WFC_manualCollapse(WFC_2, x, y, value){
 }
 
 
+
+
+
+
+
+
+
+
+//The New funcs
+//_________________________________________
+
+//This kernel is determined to be the only possibility of this cell - calculate the consequence of that
+function WFC_onlyOneKernelPossibleHere(WFC_2, x, y, kernelSpaceIndex){
+  
+  let cell = WFC_2.output_possibility_grid[x][y]
+  //Get the one kernel
+  let leftOverKernels = cell.topLeftOfKernelsLeft[kernelSpaceIndex]
+
+  if(leftOverKernels.length === 1){
+    //Just double check stuff and then 
+    let kernToCheck = 
+      WFC_2.t1.kernels[kernelSpaceIndex].ks[
+        cell.topLeftOfKernelsLeft[kernelSpaceIndex][0]
+      ]
+
+    let validKernStartingFromTopLeft = true
+    for(let xa = 0;xa < kernToCheck.length;xa++){
+      let xSpotInGrid = (x + xa) % WFC_2.output_possibility_grid.length
+      for(let ya = 0;ya < kernToCheck[xa].length;ya++){
+        let ySpotInGrid = (y + ya) % WFC_2.output_possibility_grid[xSpotInGrid].length
+        if(WFC_2.output_possibility_grid[xSpotInGrid][ySpotInGrid].possibleValsLeft.indexOf(kernToCheck[xa][ya]) < 0){
+          validKernStartingFromTopLeft = false
+        }
+      }
+    }
+
+    if(validKernStartingFromTopLeft){
+      for(let xa = 0;xa < kernToCheck.length;xa++){
+        let xSpotInGrid = (x + xa) % WFC_2.output_possibility_grid.length
+        for(let ya = 0;ya < kernToCheck[xa].length;ya++){
+          let ySpotInGrid = (y + ya) % WFC_2.output_possibility_grid[xSpotInGrid].length
+          WFC_2.output_possibility_grid[xSpotInGrid][ySpotInGrid].possibleValsLeft = [kernToCheck[xa][ya]]
+          WFC_2.cells_of_interest.push({x: xSpotInGrid, y: ySpotInGrid})
+        }
+      }
+    }
+
+  }//If there's actually one kernel
+
+}//eofnc
+
+//With the current state of the grid of possible values - prune more kernels from x,y
+function WFC_prunePossibleKernelsAroundCell(WFC_2, x, y, t1KernelSpaceIndex){//So the kSpace^2 of the top left of kernels affected
+  let cell = WFC_2.output_possibility_grid[x][y]
+
+  let totalPossibleKernsBefore = cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].length;
+  //Check remaining kernels in this kernel space
+  for(let i = cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].length-1;i > -1;i--){
+    let kernToCheck = 
+      WFC_2.t1.kernels[t1KernelSpaceIndex].ks[
+        cell.topLeftOfKernelsLeft[t1KernelSpaceIndex][i]
+      ]
+    
+    //Account for wrapping and check the next possible kernel and see if it's still valid
+    let validKernStartingFromTopLeft = true
+    for(let xa = 0;xa < kernToCheck.length;xa++){
+      let xSpotInGrid = (x + xa) % WFC_2.output_possibility_grid.length
+      for(let ya = 0;ya < kernToCheck[xa].length;ya++){
+        let ySpotInGrid = (y + ya) % WFC_2.output_possibility_grid[xSpotInGrid].length
+        if(WFC_2.output_possibility_grid[xSpotInGrid][ySpotInGrid].possibleValsLeft.
+          indexOf(kernToCheck[xa][ya]) < 0){
+            validKernStartingFromTopLeft = false
+        }
+      }
+    }
+
+    //If this kern is not valid - remove it from the list of possibilities
+    if(!validKernStartingFromTopLeft){
+      cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].splice(i, 1)
+    }
+
+  }
+
+  // console.log("----cell.topLeftOfKernelsLeft[0]")
+  // console.log("cell.topLeftOfKernelsLeft[0]", cell.topLeftOfKernelsLeft[0])
+
+  let totalPossibleKernsAfter = cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].length;
+
+  //if(totalPossibleKernsAfter < 2) console.log("WHOA NELLY ONLY ONE POSSIBLITY AT", x,y, ":totalPossibleKernsAfter:", totalPossibleKernsAfter)
+  //LOCK IN THAT BOY?!
+
+  if(totalPossibleKernsBefore !== totalPossibleKernsAfter){
+    //Set the new possible values
+    let nuPossibleValues = []
+    for(let h = 0;h < cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].length;h++){
+      let kernToEvaluateTopLeftOf = 
+        WFC_2.t1.kernels[t1KernelSpaceIndex].ks[cell.topLeftOfKernelsLeft[t1KernelSpaceIndex][h]]
+      let valueAtTopLeftOfKernel = kernToEvaluateTopLeftOf[0][0]
+      if(nuPossibleValues.indexOf(valueAtTopLeftOfKernel) < 0){
+        nuPossibleValues.push(valueAtTopLeftOfKernel)
+      }
+    }
+    cell.possibleValsLeft = nuPossibleValues
+
+    //If there is only one possible kernel it could be now, notify of this imminent collapse outside the function 
+    if(totalPossibleKernsAfter === 1){
+      return true//do we need to defenitively collapse
+    }
+  }
+
+  return false//not necessarily needing to collapse
+
+}
+
+//THe possible values for the x,y may have changed so check all
+//possible other kernels around
+function WFC_reUpdatePossibleKernelsAroundCell(WFC_2, x, y){
+  //Loop through all kernel indices
+  for(let kd = 0;kd < WFC_2.t1.kernels.length;kd++){
+
+
+    let dimOfSquareToCheck = (2 * WFC_2.t1.kernels[kd].n) - 1
+    let totalTopLeftKernelsChcked = 0
+
+    for(let xi = 0;xi < dimOfSquareToCheck;xi++){
+      for(let yi = 0;yi < dimOfSquareToCheck;yi++){
+
+        let farLeftX = x+xi-Math.floor(dimOfSquareToCheck/2) //must be at least 0
+        farLeftX = (farLeftX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+        let farTopY = y+yi-Math.floor(dimOfSquareToCheck/2) //must be at least 0
+        farTopY = (farTopY + WFC_2.output_possibility_grid[farLeftX].length) % WFC_2.output_possibility_grid[farLeftX].length
+
+        //console.log("looking at", totalTopLeftKernelsChcked, farLeftX, farTopY )
+        totalTopLeftKernelsChcked++
+        
+        //"farLeftX" and "farTopY"  are now wrapped to the possibility grid's dimensions
+        let possibleValuesForThisCellBefore = WFC_2.output_possibility_grid[farLeftX][farTopY].possibleValsLeft.length
+        let justCollapsedToOnePossibleKernel = WFC_prunePossibleKernelsAroundCell(WFC_2, farLeftX, farTopY, kd);//looping through the n^2 cells at the top left of the "dimOfSquareToCheck" grid
+        let possibleValuesForThisCellAfter = WFC_2.output_possibility_grid[farLeftX][farTopY].possibleValsLeft.length
+
+        //If possible values from the cells changed - update their kernels next time around
+        if(possibleValuesForThisCellBefore !== possibleValuesForThisCellAfter){
+          //add this cell as a cell of interest because the kernel values changed
+          WFC_2.cells_of_interest.push({x: farLeftX, y: farTopY})
+          //WFC_addCellsOfInterestAroundThisCell(WFC_2, farLeftX, farTopY)
+        }
+
+        //If the possible top left kernel is only one thing now and that's new - see which values changed and add them too
+        if(justCollapsedToOnePossibleKernel){
+          //WFC_onlyOneKernelPossibleHere(WFC_2, farLeftX, farTopY, kd)
+        }
+
+      }
+    }
+
+
+
+
+  }//end of kernel space n : [n=2,3,]
+  
+}//eofnc
+
+
+
+//Get list of low kernel entropy cells
+function WFC_getLowestKernelCells(W2){
+  let lowEntropyList = {e: 999999999, locations: []}
+  for(let i = 0;i < W2.output_possibility_grid.length;i++){
+    for(let j = 0;j < W2.output_possibility_grid[i].length;j++){
+      let cell = W2.output_possibility_grid[i][j]
+      let kSum = 0
+      for(let g = 0;g < cell.topLeftOfKernelsLeft.length;g++){
+        kSum += cell.topLeftOfKernelsLeft[g].length
+      }
+
+      if(kSum < lowEntropyList.e){
+        lowEntropyList.e = kSum
+        lowEntropyList.locations = [{x: i, y: j}]
+      }
+      else if(kSum === lowEntropyList.e){
+        lowEntropyList.locations.push({x: i, y: j})
+      }
+    }
+  }
+
+  return lowEntropyList
+}
+
+//Get list of lowest value list cells
+function WFC_nudgeLowestEntropyCells(W2){
+  let lowEntropyList = {e: 999999999, locations: []}
+  for(let i = 0;i < W2.output_possibility_grid.length;i++){
+    for(let j = 0;j < W2.output_possibility_grid[i].length;j++){
+      let cell = W2.output_possibility_grid[i][j]
+      let kSum = cell.possibleValsLeft.length
+      if(kSum < lowEntropyList.e && kSum > 1){
+        lowEntropyList.e = kSum
+        lowEntropyList.locations = [{x: i, y: j}]
+      }
+      else if(kSum === lowEntropyList.e){
+        lowEntropyList.locations.push({x: i, y: j})
+      }
+    }
+  }
+
+  let lowEntCells = lowEntropyList
+
+  if(lowEntCells.locations.length > 0){
+    let xellToChange = lowEntCells.locations[Math.floor(W2.cr.random()*lowEntCells.locations.length)]
+    let cell = W2.output_possibility_grid[xellToChange.x][xellToChange.y]
+    let forceCollapsedValue = 
+      cell.possibleValsLeft[Math.floor(W2.cr.random()*cell.possibleValsLeft.length)]
+    cell.possibleValsLeft = [forceCollapsedValue]
+    W2.cells_of_interest.push(
+      xellToChange
+    )
+  }
+
+}
+
+//function WFC_randomlyG
+function WFC_applyMegaKernelNet(W2, x, y, krnlIndex){
+
+
+  //console.log("topleft",x ,y, "checking", W2.t1.kernels[krnlIndex].ks.length)
+  let cell = W2.output_possibility_grid[x][y]
+
+  //Run through all remaining kernels weed out the bad ones
+  //If it changes at all - recalculate for all the cells in the area and watch for changes
+  let possibleKernsBefore = cell.topLeftOfKernelsLeft[krnlIndex].length
+  for(let i = cell.topLeftOfKernelsLeft[krnlIndex].length-1;i > -1;i--){
+    let kernToCheck = 
+      W2.t1.kernels[krnlIndex].ks[
+        cell.topLeftOfKernelsLeft[krnlIndex][i]
+      ]
+
+    let validKernStartingFromTopLeft = true
+    for(let xxa = 0;xxa < kernToCheck.length;xxa++){
+      let xxSpotInGrid = (x + xxa + W2.output_possibility_grid.length) % W2.output_possibility_grid.length
+      for(let yya = 0;yya < kernToCheck[xxa].length;yya++){
+        let yySpotInGrid = (y + yya + W2.output_possibility_grid[xxSpotInGrid].length) % W2.output_possibility_grid[xxSpotInGrid].length
+        let lCell = W2.output_possibility_grid[xxSpotInGrid][yySpotInGrid]
+        if(lCell.possibleValsLeft.indexOf(kernToCheck[xxa][yya]) < 0){
+          validKernStartingFromTopLeft = false
+        }
+      }
+    }
+    
+    if(!validKernStartingFromTopLeft){
+      cell.topLeftOfKernelsLeft[krnlIndex].splice(i, 1)
+    }
+
+  }
+
+
+  let totalChanges = 0
+
+
+  //If changes to # of possible kerns
+  let possibleKernsAfter = cell.topLeftOfKernelsLeft[krnlIndex].length
+  if(possibleKernsBefore !== possibleKernsAfter){
+    
+    for(let xa = 0;xa < W2.t1.kernels[krnlIndex].n;xa++){
+      let xSpotInGrid = (x + xa) % W2.output_possibility_grid.length
+      for(let ya = 0;ya < W2.t1.kernels[krnlIndex].n;ya++){
+        let ySpotInGrid = (y + ya) % W2.output_possibility_grid[xSpotInGrid].length
+        let cCell = W2.output_possibility_grid[xSpotInGrid][ySpotInGrid]
+        let possibleValsBefore = 0 + cCell.possibleValsLeft.length
+        //cCell.possibleValsLeft = []
+        let touchedPossibleVals = new Array(cCell.possibleValsLeft.length)
+        for(let un = 0;un < touchedPossibleVals.length;un++) touchedPossibleVals[un] = false
+
+        for(let i = 0;i < cell.topLeftOfKernelsLeft[krnlIndex].length;i++){//cross reference  w possible kernels
+          let krn = W2.t1.kernels[krnlIndex].ks[
+            cell.topLeftOfKernelsLeft[krnlIndex][i]
+          ]
+          let indOfThisAllowedVal = cCell.possibleValsLeft.indexOf(krn[xa][ya])
+          if(indOfThisAllowedVal > -1){
+            touchedPossibleVals[indOfThisAllowedVal] = true
+          }
+        }
+
+        //Remove the options that were never accounted for
+        for(let ji = cCell.possibleValsLeft.length-1;ji > -1;ji--){
+          if(touchedPossibleVals[ji] === false && cCell.possibleValsLeft.length > 1){
+            cCell.possibleValsLeft.splice(ji, 1)
+          }
+        }
+
+        let possibleValsAfter = cCell.possibleValsLeft.length
+        if(possibleValsBefore !== possibleValsAfter){
+          totalChanges += possibleValsBefore - possibleValsAfter
+          //W2.cells_of_interest.push({x: xSpotInGrid, y: ySpotInGrid})
+        }
+
+      }
+
+    }
+
+
+
+    // //If there is only one possible kernel it could be now, notify of this imminent collapse outside the function 
+    // if(totalPossibleKernsAfter === 1){
+    //   return true//do we need to defenitively collapse
+    // }
+  }
+
+  
+  
+  return totalChanges
+
+}
+
+
+//The big sweeping net.
+function WFC_castTheBigSweepingNet(WFC_2, x, y){
+
+
+
+  
+  //For  every combination of this thing, cross check with all the kernels:
+  //get the lowest entropied ones pick reandomy
+  //kernels that tie for lowest entropy choose one randomly
+  //record any value changes
+  //if there were add that to the cells of interest
+
+
+  //Loop through all kernel indices
+  for(let kd = 0;kd < WFC_2.t1.kernels.length;kd++){
+
+
+    let dimOfSquareToCheck = (2 * WFC_2.t1.kernels[kd].n) - 1
+    let totalPossibleValsChanged = 0;
+
+    
+
+
+    
+
+
+
+    //x^2 comparisons of the kernel windows that fit around this pixel
+    for(let xi = 0;xi < dimOfSquareToCheck;xi++){
+      for(let yi = 0;yi < dimOfSquareToCheck;yi++){
+
+
+        
+
+        let farLeftX = x+xi-Math.floor(dimOfSquareToCheck/2) //must be at least 0
+        farLeftX = (farLeftX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+        let farTopY = y+yi-Math.floor(dimOfSquareToCheck/2) //must be at least 0
+        farTopY = (farTopY + WFC_2.output_possibility_grid[farLeftX].length) % WFC_2.output_possibility_grid[farLeftX].length
+
+        
+
+        //If kernel is in bounds
+        if(xi + Math.floor(dimOfSquareToCheck/2) < dimOfSquareToCheck){
+          if(yi + Math.floor(dimOfSquareToCheck/2) < dimOfSquareToCheck){
+            totalPossibleValsChanged += WFC_applyMegaKernelNet(WFC_2, farLeftX, farTopY, kd)
+          }
+        }
+
+        
+        
+
+
+
+      }
+    }
+
+
+    if(totalPossibleValsChanged > 0){
+      WFC_addCellsOfInterestAroundThisCell(WFC_2, x, y)
+    }
+
+
+  }//End of kernel size compartments
+
+}
+
+
+//Interesting cells are added manually and change 
+function WFC_collapseAllPossibleCells(WFC_2){
+  //Get next interesting cell
+  while(WFC_2.cells_of_interest.length > 0){
+    let xell = WFC_2.cells_of_interest.shift()
+    WFC_castTheBigSweepingNet(WFC_2, xell.x, xell.y);
+    //WFC_reUpdatePossibleKernelsAroundCell(WFC_2, xell.x, xell.y);
+
+    //let gridCellObject = WFC_2.output_possibility_grid[xell.x][xell.y]
+
+    //console.log("Checking x,y", xell.x, xell.y, "vals left", gridCellObject.possibleValsLeft.length)
+    //if(gridCellObject.possibleValsLeft.length < 2)  return null;
+    //let possibilitiesBeforeChange = 0 + gridCellObject.possibleValsLeft.length
+
+    //Gotta update each gridCellObject's:
+    //possibleValsLeft
+    //topLeftOfKernelsLeft
+    
+    //For each possible Kernel dimension length (only 1 for now though)
+    //If the possible vals for 
+  }
+
+  //If there are still cells w extremely low entropy
+  WFC_nudgeLowestEntropyCells(WFC_2)//WFC_getLowestKernelCells(WFC_2)
+  
+
+
+  //console.log("ending cells_of_interest.length", WFC_2.cells_of_interest.length)
+
+  
+  return null
+}
+
+
+
+
+
+
+//Kinda old funcs
+//_____________________________________________
+/*
 function WFC_kernelAttemptFitInAnyPosition(WFC_2, x, y, kernel){
 
   //Check every angle of every kernel
@@ -236,165 +675,6 @@ function WFC_kernelAttemptFitInAnyPosition(WFC_2, x, y, kernel){
   return null;
 }
 
-
-
-
-
-
-
-//The New funcs
-//_________________________________________
-
-//Go through all kernels and try to find one possible one that fits -
-//manually change 
-function WFC_attemptHardPlaceOfRandomKernel(WFC_2, x, y){
-
-  //random starting indices in the kernel
-  let startingKernelOffset = Math.floor(WFC_2.cr.random() * WFC_2.t1.kernels.length)
-  for(let ii = 0;ii < WFC_2.t1.kernels.length;ii++){
-    let i = (startingKernelOffset+ii) % WFC_2.t1.kernels.length
-    
-    let startingInsideKernel = Math.floor(WFC_2.cr.random() * WFC_2.t1.kernels[i].ks.length)
-    for(let jj = 0;jj < WFC_2.t1.kernels[i].ks.length;jj++){
-      let j = (startingInsideKernel+jj) % WFC_2.t1.kernels[i].ks.length
-
-      let kernToTry = WFC_2.t1.kernels[i].ks[j]
-      
-      let resultAndMeta = WFC_kernelAttemptFitInAnyPosition(WFC_2, x, y, kernToTry)
-      if(resultAndMeta) return true
-    }
-  }
-
-  return false
-}
-
-//With the current state of the grid of possible values - prune more kernels from x,y
-function WFC_prunePossibleKernelsAroundCell(WFC_2, x, y, t1KernelSpaceIndex){
-  let cell = WFC_2.output_possibility_grid[x][y]
-
-  let totalPossibleKernsBefore = cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].length;
-  //Check remaining kernels in this kernel space
-  for(let i = cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].length-1;i > -1;i--){
-    let kernToCheck = 
-      WFC_2.t1.kernels[t1KernelSpaceIndex].ks[
-        cell.topLeftOfKernelsLeft[t1KernelSpaceIndex][i]
-      ]
-    
-    let validKernStartingFromTopLeft = true
-    for(let xa = 0;xa < kernToCheck.length;xa++){
-      let xSpotInGrid = (x+xa)%WFC_2.output_possibility_grid.length
-      for(let ya = 0;ya < kernToCheck[xa].length;ya++){
-        if(WFC_2.output_possibility_grid[xSpotInGrid]
-          [(y+ya)%WFC_2.output_possibility_grid[xSpotInGrid].length].possibleValsLeft.
-          indexOf(kernToCheck[xa][ya]) < 0){
-            validKernStartingFromTopLeft = false
-        }
-      }
-    }
-
-    //If this kern is not valid - remove it from the list of possibilities
-    if(!validKernStartingFromTopLeft){
-      cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].splice(i, 1)
-    }
-
-  }
-
-
-  let totalPossibleKernsAfter = cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].length;
-
-  //Recalc possible values based on remaining kernels
-  if(totalPossibleKernsBefore !== totalPossibleKernsAfter){
-    let nuPossibleValues = []
-    for(let h = 0;h < cell.topLeftOfKernelsLeft[t1KernelSpaceIndex].length;h++){
-      let valueAtTopLeftOfKernel = cell.topLeftOfKernelsLeft[t1KernelSpaceIndex][h][0][0]
-      if(nuPossibleValues.indexOf(valueAtTopLeftOfKernel) < 0){
-        nuPossibleValues.push(valueAtTopLeftOfKernel)
-      }
-    }
-  }
-
-}
-
-//THe possible values for the x,y may have changed so check all
-//possible other kernels around
-function WFC_reUpdatePossibleKernelsAroundCell(WFC_2, x, y){
-  //Loop through all kernels
-  for(let kd = 0;kd < WFC_2.t1.kernels.length;kd++){
-
-    let dimOfSquareToCheck = (2 * WFC_2.t1.kernels[kd].n) - 1
-
-    for(let xi = 0;xi < dimOfSquareToCheck;xi++){
-      for(let yi = 0;yi < dimOfSquareToCheck;yi++){
-        let farLeftX = x+xi-Math.floor(dimOfSquareToCheck) //must be at least 0
-        let farRightX = x+xi+Math.floor(dimOfSquareToCheck)//must be smaller than width length
-        let farTopY = y+yi-Math.floor(dimOfSquareToCheck) //must be at least 0
-        let farDownY = y+yi+Math.floor(dimOfSquareToCheck)//must be smaller than width length
-
-        //Make sure this variation of the kernel is in bounds
-        if(farLeftX > -1 && farLeftX < WFC_2.output_possibility_grid.length && 
-          farTopY > -1 && farTopY < WFC_2.output_possibility_grid[farLeftX].length){
-          
-          let possibleValuesForThisCellBefore = WFC_2.output_possibility_grid[farLeftX][farTopY].possibleValsLeft.length
-          WFC_prunePossibleKernelsAroundCell(WFC_2, farLeftX, farTopY, kd)
-          let possibleValuesForThisCellAfter = WFC_2.output_possibility_grid[farLeftX][farTopY].possibleValsLeft.length
-
-          if(possibleValuesForThisCellBefore !== possibleValuesForThisCellAfter){
-            //add this cell as a cell of interest because the kernel values changed
-            WFC_2.cells_of_interest.push({x: farLeftX, y: farTopY})
-          }
-
-        }
-      }
-    }
-
-  }
-
-  //eofnc
-}
-
-
-function WFC_examineNextInterestingCell(WFC_2){
-
-
-  console.log("starting cells_of_interest.length", WFC_2.cells_of_interest.length)
-
-  //Get next interesting cell
-  if(WFC_2.cells_of_interest.length > 0){
-    let xell = WFC_2.cells_of_interest.shift()
-
-
-    let gridCellObject = WFC_2.output_possibility_grid[xell.x][xell.y]
-
-    //console.log("Checking x,y", xell.x, xell.y, "vals left", gridCellObject.possibleValsLeft.length)
-    //if(gridCellObject.possibleValsLeft.length < 2)  return null;
-    //let possibilitiesBeforeChange = 0 + gridCellObject.possibleValsLeft.length
-
-    //Gotta update each gridCellObject's:
-    //possibleValsLeft
-    //topLeftOfKernelsLeft
-    
-    //For each possible Kernel dimension length (only 1 for now though)
-    //If the possible vals for 
-    WFC_reUpdatePossibleKernelsAroundCell(WFC_2, xell.x, xell.y);
-
-
-  }
-
-
-  console.log("ending cells_of_interest.length", WFC_2.cells_of_interest.length)
-
-  
-  return null
-}
-
-
-
-
-
-
-//Kinda old funcs
-//_____________________________________________
-/*
 function WFC_refreshPossibilitiesBasedOnKernels(WFC_2, x, y){
 
   //Each index is literally the ID of the thing being placed
