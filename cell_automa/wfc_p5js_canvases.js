@@ -84,106 +84,93 @@ var sketch_template = function(p) {
       //Draw the grid
       p.noStroke()
   
-      //TODO only if T2s possibility grid is developed
-      if(WFC_TEMPLATE_2){
-  
-  
+      //Paint brush when mouse down
+      if(p.mouseIsPressed){
         
-  
-  
-        
-        //Paint brush when mouse down
-        if(p.mouseIsPressed){
-          
-          
-  
-          
-        }
-  
-  
-        if(WFC_TEMPLATE_2.output_possibility_grid){
-  
-          let gridPixels = p.width / WFC_TEMPLATE_2.output_possibility_grid.length
-          let possibilitySquaresPixels = gridPixels / 4
-  
-          for(let i = 0;i < WFC_TEMPLATE_2.output_possibility_grid.length;i++){
-            for(let j = 0;j < WFC_TEMPLATE_2.output_possibility_grid[i].length;j++){
-  
-              let gridOutputPossibility = WFC_TEMPLATE_2.output_possibility_grid[i][j]
+      }
+
+
+      if(WFC_TEMPLATE_2 && WFC_TEMPLATE_2.output_possibility_grid){
+
+        let gridPixels = p.width / WFC_TEMPLATE_2.output_possibility_grid.length
+        let possibilitySquaresPixels = gridPixels / 4
+
+        for(let i = 0;i < WFC_TEMPLATE_2.output_possibility_grid.length;i++){
+          for(let j = 0;j < WFC_TEMPLATE_2.output_possibility_grid[i].length;j++){
+
+            let gridOutputPossibility = WFC_TEMPLATE_2.output_possibility_grid[i][j]
+            
+            //Draw no solutoins
+            if(gridOutputPossibility.possibleValsLeft.length === 0){
+              p.noStroke();
+              p.fill(25, 0, 0)
+
+              p.push()
+              p.translate(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2)
+              p.rotate(1)
+              p.rect(0, 0, gridPixels/2, gridPixels/5)
+              p.pop()
               
-              //Draw no solutoins
-              if(gridOutputPossibility.possibleValsLeft.length === 0){
+              p.push()
+              p.translate(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2)
+              p.rotate(-1)
+              p.rect(0, 0, gridPixels/2, gridPixels/5)
+              p.pop()
+            }
+            //Draw one large big square
+            else if(gridOutputPossibility.possibleValsLeft.length === 1){
+              let cellType = templatePossibilities[gridOutputPossibility.possibleValsLeft[0]];
+              if(cellType){
                 p.noStroke();
-                p.fill(25, 0, 0)
-  
-                p.push()
-                p.translate(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2)
-                p.rotate(1)
-                p.rect(0, 0, gridPixels/2, gridPixels/5)
-                p.pop()
-                
-                p.push()
-                p.translate(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2)
-                p.rotate(-1)
-                p.rect(0, 0, gridPixels/2, gridPixels/5)
-                p.pop()
-              }
-              //Draw one large big square
-              else if(gridOutputPossibility.possibleValsLeft.length === 1){
-                let cellType = templatePossibilities[gridOutputPossibility.possibleValsLeft[0]];
-                if(cellType){
-                  p.noStroke();
-                  p.fill(cellType.r, cellType.g, cellType.b)
-                  p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
-                }
-              }
-              //Draw a bunch of possibilities
-              else{
-                let diffPossibilitiesToBeDrawn = gridOutputPossibility.possibleValsLeft.length
-  
-                let totalR = 0
-                let totalG = 0
-                let totalB = 0
-
-                for(let k = diffPossibilitiesToBeDrawn-1;k > -1;k--){
-                  let cellType = templatePossibilities[gridOutputPossibility.possibleValsLeft[k]];
-                  totalR += cellType.r
-                  totalG += cellType.g
-                  totalB += cellType.b
-                }
-
-
-                p.fill(
-                  Math.floor(totalR/diffPossibilitiesToBeDrawn), 
-                  Math.floor(totalG/diffPossibilitiesToBeDrawn), 
-                  Math.floor(totalB/diffPossibilitiesToBeDrawn)
-                )
-                p.noStroke()
+                p.fill(cellType.r, cellType.g, cellType.b)
                 p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
               }
-              
-              
-                
-              
-              
-            }  
-          }
+            }
+            //Draw a bunch of possibilities
+            else{
+              let diffPossibilitiesToBeDrawn = gridOutputPossibility.possibleValsLeft.length
+
+              let totalR = 0
+              let totalG = 0
+              let totalB = 0
+
+              for(let k = diffPossibilitiesToBeDrawn-1;k > -1;k--){
+                let cellType = templatePossibilities[gridOutputPossibility.possibleValsLeft[k]];
+                totalR += cellType.r
+                totalG += cellType.g
+                totalB += cellType.b
+              }
 
 
-          //what u highligting
-          output_ui_kernel_x = Math.floor(p.mouseX / gridPixels)
-          output_ui_kernel_y = Math.floor(p.mouseY / gridPixels)
-
-          document.getElementById("outputMouseXAndY").innerHTML = output_ui_kernel_x + "  " + output_ui_kernel_y
-
-          p.noFill()
-          p.strokeWeight(2)
-          if(output_ui_atleast_one_kernel_good) p.stroke(255)
-          else p.stroke(255, 0, 0)
-          p.rect(output_ui_kernel_x*gridPixels + (gridPixels*template_kernel_size)/2, output_ui_kernel_y*gridPixels + (gridPixels*template_kernel_size)/2,
-           (gridPixels*template_kernel_size), (gridPixels*template_kernel_size))
+              p.fill(
+                Math.floor(totalR/diffPossibilitiesToBeDrawn), 
+                Math.floor(totalG/diffPossibilitiesToBeDrawn), 
+                Math.floor(totalB/diffPossibilitiesToBeDrawn)
+              )
+              p.noStroke()
+              p.rect(i*gridPixels + gridPixels/2, j*gridPixels + gridPixels/2, gridPixels, gridPixels)
+            }
+            
+            
+              
+            
+            
+          }  
         }
-  
+
+
+        //what u highligting
+        output_ui_kernel_x = Math.floor(p.mouseX / gridPixels)
+        output_ui_kernel_y = Math.floor(p.mouseY / gridPixels)
+
+        document.getElementById("outputMouseXAndY").innerHTML = output_ui_kernel_x + "  " + output_ui_kernel_y
+
+        p.noFill()
+        p.strokeWeight(2)
+        if(output_ui_atleast_one_kernel_good) p.stroke(255)
+        else p.stroke(255, 0, 0)
+        p.rect(output_ui_kernel_x*gridPixels + (gridPixels*template_kernel_size)/2, output_ui_kernel_y*gridPixels + (gridPixels*template_kernel_size)/2,
+          (gridPixels*template_kernel_size), (gridPixels*template_kernel_size))
       }
   
       
@@ -255,7 +242,7 @@ var sketch_template = function(p) {
             
             //Is currently the section being highlighted
             let sectionBeingHighlighted = true
-            if(WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x] && WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x][output_ui_kernel_y]){
+            if(WFC_TEMPLATE_2 && WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x] && WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x][output_ui_kernel_y]){
               let gridToCheck = WFC_TEMPLATE_2.output_possibility_grid[output_ui_kernel_x][output_ui_kernel_y]
               for(let ax = 0;ax < krn.length;ax++){
                 for(let ay = 0;ay < krn[ax].length;ay++){
