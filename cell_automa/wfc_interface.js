@@ -76,9 +76,12 @@ function propogateNewTemplateObjectWRandomSeed(){
 
 
 function stepExistingT2(WFC_2){
-  // console.log('interests:')
-  // console.log(JSON.stringify(WFC_2.cells_of_interest))
+  //console.log('interests:')
+  // console.log(WFC_2.cells_of_interest.length)
+  // console.log(WFC_2.cells_of_interest)
+
   
+
   let resultingAmountOfInterestingCells = WFC_collapseAllPossibleCells(WFC_2) 
 
   //Option: switch the reading of the kernels to wrapping: ON/OFF
@@ -133,15 +136,15 @@ function stepExistingT2(WFC_2){
 
 
 
-function stepExistingT2_80(WFC_2){
-  // console.log('interests:')
-  // console.log(JSON.stringify(WFC_2.cells_of_interest))
-  for(let j = 0;j < 280;j++){
-    let resultingAmountOfInterestingCells = 
-      WFC_collapseAllPossibleCells(WFC_2)
-    updateOutputGeneratorUI(WFC_2)
-  }
-}
+// function stepExistingT2_80(WFC_2){
+//   // console.log('interests:')
+//   // console.log(JSON.stringify(WFC_2.cells_of_interest))
+//   for(let j = 0;j < 280;j++){
+//     let resultingAmountOfInterestingCells = 
+//       WFC_collapseAllPossibleCells(WFC_2)
+//     updateOutputGeneratorUI(WFC_2)
+//   }
+// }
 
 
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
