@@ -1,3 +1,33 @@
+/*
+This smart boy is trained in an environment with rules that it must learn etc.
+BUT^ this is necessary becuase the types of associations the smart boy MUST do
+in order to even be called a smart boy system is interact with an environment 
+in time
+
+Minimum version of this environmet:
+*Agent can OBSERVE _and_ INFLUENCE its environment
+*Causal events and learnable patterns in second-second time frame
+
+Things left to build:
+1) Tool to build the environment's stream of inputs to show when reward / punishment should be given
+	-This requires some kind of envionrment w the ability to convert itself into a bit stream
+		to be given to the nn
+	-Be able to input like an image and 
+
+2) Neuro logical frameowrk for how new Neurons fire with the new neurotransmitter
+	-List of all things that are governed by the StdNn and what neurotransmitters are deployed and when
+
+3) Neuro placements of neurons
+	-Square linear logical placement
+	-Random scatterings of all
+	-Square linear 
+4) Creation of all this in al lpossible space by the genetic evo - determine the possible spaces
+
+5) Tool to evaluate and rank, and geneetically evolve
+
+6) Tool to evaluate current environemnt + test other environments?
+
+*/
 var canvasInstance;
 //Neuron specifications
 var p5_neuronApartDefaultOffset = 90;
@@ -18,15 +48,9 @@ var animateTheVisualNetworkModel = true;
 //Import "bundle.js" and the crypto helper
 var OVERLORD_RAND;
 
-//The smart boy 
-var boy;
-
-//Make genes
+//The specifications of the current agent being run
+var Boy;
 var Gen;
-
-//Environment to show 
-var demoWorld;
-var demoFetus;
 
 //Determines which mode the interface is in
 //either: exact mode, or gene worker mode
@@ -37,21 +61,12 @@ var uiGeneMode = 0
 function resetWholeSmartBoy(){
 	boy = new SmartBoy({
 		"type": "smartboy",		//Smartboy
-		"layers": [1, 49, 1],	//The policy network
+		"layers": [1, 25, 1],	//PU configuration (ins, hiddens, outs)
 		"gene": null,	//values for all the god parameters required
-	}, "test s e e d " + Math.random());
-	SmartBoy.refresh_gene_object_v1(boy)
-	//Should only be called once
-	SmartBoy.express_gene_object_v1(boy)
-
-	//Son of  abitch
+	}, "test s e e d  _ 8123.../");
 }
 
 
-
-/////////////////////////
-//////SETUP//////////////
-///////////////////////
 function setup(){
 	createCanvas(600, 600);
 	//createCanvas(600, 600, WEBGL);
@@ -66,18 +81,15 @@ function setup(){
 
 	OVERLORD_RAND = new CustomRandom("snxeakfddsdsdfy seed", CHelper__B.hasher_256);
 
+
+	
+	//Test the std nn
+	let net = new StdNn({
+		"layers": [3, 4, 1]//[2, 2, 1],//The layers of the  net work
+	}, "randoseed1239&");
+	console.log(net.activate([1,2,4]))
+
 	resetWholeSmartBoy()
-	
-	console.log("created new boy w gene object:->");
-	console.log("Refresh gene obkect:" + Object.keys(boy.geneObject))
-	console.log(JSON.stringify(boy.geneObject))
-	
-	//console.log(boy.geTotal() + " genes used")
-	
-	//trendGene = Gen.newGene();
-	
-	demoWorld = new World();
-	demoFetus = null;
 }
 
 function loadUpDemoForCaseStudy(){
@@ -86,50 +98,32 @@ function loadUpDemoForCaseStudy(){
 
 function draw(){
 
-	if(false){
-
-	
-		background(20);
-		//drawTrend();
-		drawPastScores();
-		
-		//If there is a top scorer yet, draw it in a fake world
-		if(demoFetus){
-			
-			//console.log("drawing");
-			demoWorld.draw(true);
-			//console.log("draw", demoWorld.xoff);
-		}
+	if(uiGeneMode === 0){//Gene Mode
+		background(7, 61, 132)
 
 	}
-	else{
-		if(uiGeneMode === 0){//Gene Mode
-			background(7, 61, 132)
+	else if(uiGeneMode === 1){//Inspector Mode
+		//background(30, 20, 20);
+		background(119, 119, 24);
+	}
 
-		}
-		else if(uiGeneMode === 1){//Inspector Mode
-			//background(30, 20, 20);
-			background(119, 119, 24);
-		}
+	//Move selected neuron towards
+	if(heldNeuron){
+		heldNeuron.p5_x += (mouseX - heldNeuron.p5_x) / 14.00;
+		heldNeuron.p5_y += (mouseY - heldNeuron.p5_y) / 14.00;
+	}
 
-		//Move selected neuron towards
-		if(heldNeuron){
-			heldNeuron.p5_x += (mouseX - heldNeuron.p5_x) / 14.00;
-			heldNeuron.p5_y += (mouseY - heldNeuron.p5_y) / 14.00;
-		}
+	drawWeights();
+	drawNexts();
+	drawNeurons();
 
-		drawWeights();
-		drawNexts();
-		drawNeurons();
-
-		//Is Shift down? Display where user is goin
-		if(startNeuronForNewConnection){
-			stroke(255);
-			strokeWeight(1);
-			line(startNeuronForNewConnection.p5_x, 
-				startNeuronForNewConnection.p5_y, 
-				mouseX, mouseY);
-		}
+	//Is Shift down? Display where user is goin
+	if(startNeuronForNewConnection){
+		stroke(255);
+		strokeWeight(1);
+		line(startNeuronForNewConnection.p5_x, 
+			startNeuronForNewConnection.p5_y, 
+			mouseX, mouseY);
 	}
 	
 }
@@ -142,6 +136,10 @@ function draw(){
 
 
 
+///Functions to display the SMARTBOY_ringCore Architecure
+//===================================================================================
+//===================================================================================
+//===================================================================================
 function drawNeurons(){
 	
 	noStroke();
@@ -226,8 +224,8 @@ function drawNexts(){
 	    
 	    noStroke();
 	    ellipse(
-			boy.oracle.nexts[i].f.p5_x + (vec.x * (frameCount%24) / 24),
-			boy.oracle.nexts[i].f.p5_y + (vec.y * (frameCount%24) / 24),
+			boy.oracle.nexts[i].f.p5_x + (vec.x * (frameCount%45) / 45),
+			boy.oracle.nexts[i].f.p5_y + (vec.y * (frameCount%45) / 45),
 			4,
 			4,
 	    );
@@ -238,8 +236,18 @@ function drawNexts(){
 
 
 
+//Functions to display the SmartBoy_Nt architecture
 
+//===================================================================================
+function drawNtNeuron(){
+	//not much differnt than the old draw neuron
+}
+function drawNtWeights(){
+	//Draw the different values of nt
+}
+function drawCurrentTrainingSet(){
 
+}
 
 
 
@@ -409,21 +417,6 @@ function keyPressed(){
 		moveDown = true;
 	}
 	if(key === ' '){
-		/*
-		for(let hh = 0;hh < 4;hh++){
-			Gen.nextGeneration();
-			if(hh%100===0){
-				console.log(hh);
-			}				
-			demoWorld = new World();
-			demoFetus = Gen.fetusFromGene(Gen.genes[Gen.genes.length-1].gene);//null;
-			demoWorld.init(demoFetus);
-		}
-		//Take the top scorer make him the point of interest and update the world being displayed
-		
-		//demoFetus = 
-		//demoWorld.init(demoFetus);
-		*/
 		boy.step();
 	}
 	if(keyCode === SHIFT){
@@ -444,57 +437,6 @@ function keyPressed(){
 	
 }
 
-function drawTrend(){
-	fill(255);
-	noStroke();
-	text("From: " + Gen.trendField.length + " trends", 20, 50);
-	
-	if(Gen.trendField.length > 0){
-		//For all the values of the trend
-		for(let kk = 0;kk < trendGene.length;kk++){
-			let summ = 0;
-			//For all the trends  captured
-			for(let i = 0;i < Gen.trendField.length;i++){
-				summ += Gen.trendField[i].gene[kk];
-				
-			}
-			//Draw the ave 
-			summ /= Gen.trendField.length;
-			let lastVal = Gen.trendField[
-				Gen.trendField.length-1
-			].gene[kk];
-			
-			//Change colour based on up or down
-			if(lastVal < summ){
-				fill(200, 0, 0);
-			}
-			else if(lastVal > summ) {
-				fill(0, 200, 0);
-			}
-			else{
-				fill(200);
-			}
-			text("a: " + summ.toFixed(2), kk * 60 + 40, 76);
-		}
-		
-		fill(255);
-		//Just draw every hundredth idk
-		for(let i = 0;i < Gen.trendField.length;i+=100){
-			for(let kk = Gen.trendField[i].gene.length-1;kk > -1;kk--){
-				text("a: " + Gen.trendField[i].gene[kk].toFixed(2), 
-					kk * 60 + 40, 
-					76 + 30*((i/100)+1)
-				);
-			}
-		}
-	}
-	
-	
-	
-	fill(255, 0 , 0);
-	ellipse(20, 50, 2, 2);
-	
-}
 
 function drawPastScores(){
 	for(let i = 0;i < Gen.trendField.length;i+=3){

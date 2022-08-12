@@ -6,4 +6,7 @@ This library is mostly to explore and learn how a number of simple computational
 To install:
 npm install
 
-To build source files for 
+cell_automa:    2d wave function collapse
+neuro_transmitter:      --
+ang_hub:    angular example app - will one day be the combination of all projects
+src:    Most recent smart boy, uses sketch_Nt.js and genetic evolution

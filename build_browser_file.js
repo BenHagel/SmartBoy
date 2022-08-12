@@ -6,9 +6,11 @@ var outputContents = "//Smart Boy - ready for browser\n\n//Built at:" + Date.now
 
 outputContents += "\n\n"+fs.readFileSync("./bundle.js");
 outputContents += "\n\n"+fs.readFileSync("src/CustomRandom.js");
+outputContents += "\n\n"+fs.readFileSync("src/StdNn.js");
 outputContents += "\n\n"+fs.readFileSync("src/GeneticEvo.js");
 outputContents += "\n\n"+fs.readFileSync("src/Neuron.js");
 outputContents += "\n\n"+fs.readFileSync("src/SmartBoy_5_Ringcore.js");
+outputContents += "\n\n"+fs.readFileSync("src/SmartBoy_5_Nt.js");
 outputContents += "\n\n"+fs.readFileSync("src/Util.js");
 outputContents += "\n\n"+fs.readFileSync("src/World.js");
 

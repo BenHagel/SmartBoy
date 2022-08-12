@@ -22,7 +22,7 @@ const c = multiplyMatrix(a, b);
 
 
 
-class SmartBoy{
+class SmartBoy{//Neuro transmitter augmentation
 
 	constructor(conf, seed){
 		//ID tracker for generating neurons
@@ -34,17 +34,19 @@ class SmartBoy{
 		//Setup
 		this.type = conf.type;
 		this.layers;//array of neurons[[...4], [...49], [...4]]
-		this.layer_schema = conf.layers;	
+		this.layer_schema = conf.layers;
 		this.all_neurons = [];//just this.layers[0], this.layers[1], and this.layers[2] concatenated 
-		this.std_neuron_diam = 20;	//how much diameter should neurons have in this smart boy (not used in calculations)
+		this.std_neuron_diam = 20;	//cosmetic
 		this.unit_distance = 50;	//ave arc length between neurons in the core
 		this.unit_offset_x = 50;
 		this.unit_offset_y = 50;
 
 		//Unpack the gene and instantiate it into the smart boy's neural architecture
+		//Array of numbers
 		this.gene = conf.gene ? conf.gene : this.rand.precalced;
 
 		//The object this agent's parameters are stored with a label 
+		//and often mapped from the generated 0-1 to a custom range
 		this.geneObject = {};
 		
 		//meta SmartBoy info, information about the state of the network
@@ -57,7 +59,9 @@ class SmartBoy{
 		this.layers = new Array(conf.layers.length);
 		//Define func to aggregate length of all neurons
 		this.totalNeurons = () => {
-			let totNeu = 0;for(let i = 0;i < this.layers.length;i++) totNeu += this.layers[i].length;
+			let totNeu = 0;
+			for(let i = 0;i < this.layers.length;i++)
+				totNeu += this.layers[i].length;
 			return totNeu;
 		};
 
@@ -102,355 +106,6 @@ class SmartBoy{
 		SmartBoy.refresh_gene_object_v1(this)
 		//Should only be called once
 		SmartBoy.express_gene_object_v1(this)
-		
-
-	}
-
-
-	//Method to return the next number in the gene
-	ge() {
-		let theGE = this.gene[this.geneIndexTracker]
-		this.geneIndexTracker = (this.geneIndexTracker+1) % this.gene.length
-		return theGE
-	}
-
-	//Called right before refreshing the gene object
-	geReset(){
-		this.geneIndexTracker = 0
-	}
-
-	//Method get total number of times a gene was used
-	//(call only after constructor)
-	geTotal(){
-		return -1;
-	}
-	
-
-	//Helper function needs to be declared up here before connect
-	getNeuronByID(idd){
-		for(let b = 0;b < this.layers.length;b++){
-			for(let c = 0;c < this.layers[b].length;c++){
-				if(idd === this.layers[b][c].id) return this.layers[b][c];
-			}
-		}
-		return null;
-	}
-
-
-	//this.neuronAt = (ind) => {
-	//	return this.layers[0].concat(this.layers[1]).concat(this.layers[2])[ind];
-	//};
-
-	//inputs needed to be smaller than the number of input neurosn in the first layer
-	activate(inputs){
-		for(let j = 0;j < inputs.length;j++){
-			//If the stimulatio nis 0, dont bother the outputs of this neuron, so don't stimulate...
-			if(inputs[j] > 0){
-				Neuron.Neuron_stimulate(
-					this.oracle.nexts, 
-					this.layers[0][j], 
-					inputs[j]
-				);
-			}
-			
-		}
-	}
-
-	//SLeep mode?
-	resetFiredCount() {
-		for(let i = 0;i < this.layers.length;i++){
-			for(let j = 0;j < this.layers[i].length;j++){
-				this.layers[i][j].timesfired = 0;
-			}
-		}
-	}
-
-	step() {
-		this.oracle.timeindex++;
-		let newDischarge = 0.0;
-		let neuronsCheckedSoFar = [];
-
-		while(this.oracle.nexts.length > 0){
-			let signal = this.oracle.nexts.shift();
-			let neu = signal.o;
-
-			if(neuronsCheckedSoFar.indexOf(neu) === -1){
-				neuronsCheckedSoFar.push(neu);
-			}
-			else{
-			}
-			
-			//Add the val of this signal to the potential
-			var getWeight = function(nnn, neufrom){
-				for(let i = 0;i < nnn.incoming.length;i++) 
-					if(nnn.incoming[i].n === neufrom) return nnn.incoming[i];
-			};
-			let ww = getWeight(neu, signal.f);
-			neu.potential += ww.w * signal.v;
-		}
-
-		//While there are neurons to fire?
-		for(let k = 0;k < neuronsCheckedSoFar.length;k++){
-			if(neuronsCheckedSoFar[k].potential + neuronsCheckedSoFar[k].bias > neuronsCheckedSoFar[k].threshold){
-				let spillage = neuronsCheckedSoFar[k].potential - neuronsCheckedSoFar[k].threshold;//TODO <- this could mean something
-
-				let sigmoidX = Math.abs(neuronsCheckedSoFar[k].potential);
-				neuronsCheckedSoFar[k]._output = 0.0 + neuronsCheckedSoFar[k].output;
-				neuronsCheckedSoFar[k].output = Util.relu(sigmoidX); //sigmoid(sigmoidX);// + spillage/neuronsCheckedSoFar[k].threshold;//neuronsCheckedSoFar[k].potential / neuronsCheckedSoFar[k].threshold;//1.0;
-				
-				neuronsCheckedSoFar[k].potential = 0.0;//spillage/2.5;// 0;//+ spillage *0.01? lol maybe
-				neuronsCheckedSoFar[k].timesfired++;
-				neuronsCheckedSoFar[k].lastfired = this.oracle.timeindex;
-
-				//Send nexts out
-				for(let i = 0;i < neuronsCheckedSoFar[k].outgoing.length;i++){
-					let valToAdd = {
-						"f": neuronsCheckedSoFar[k],
-						"o": neuronsCheckedSoFar[k].outgoing[i].n,
-						"v": neuronsCheckedSoFar[k].output
-					};
-					this.oracle.nexts.push(valToAdd);
-					newDischarge += valToAdd.v;
-				}
-			}
-			//Neuron cannot fire!
-			else{
-
-			}
-		}
-
-		let theOuts = [];
-		for(let c = 0;c < this.layers[this.layers.length-1].length;c++){
-			//console.log(this.layers[this.layers.length-1][c].id);
-			theOuts.push(this.layers[this.layers.length-1][c].output + 0);
-			this.layers[this.layers.length-1][c].output = 0;
-		}
-		return theOuts;
-	}
-
-
-	sb_train_supervised2(aveoutputs, targetoutputs, learningrate) {
-		let totalError = 0.0;
-		let activeNeurons = [];
-		let neuronsAlreadyLookedAt = [];//neuronsAlreadyLookedAt.push(neu); not necessary will nvr connect ot an output
-
-		for(let v = 0;v < this.layers[2].length;v++){
-			let e = aveoutputs[v] - targetoutputs[v]; //1 got 0.3, move .7 UP
-			this.layers[2][v].error = e;
-			totalError += Math.abs(e);
-			activeNeurons.push(this.layers[2][v]);
-		}
-		
-		do{
-			for(let j = activeNeurons.length-1;j > -1;j--){
-				//Loop through inputs and update the incoming weights
-				let sum = 0.0;
-				//If there are any outputs to this neuron then have to calculate the error ourselves
-				if(activeNeurons[j].outgoing.length > 0){
-					//Loop through outputs gather up error
-					for(let k = 0;k < activeNeurons[j].outgoing.length;k++){
-						//Loop through the inputs of that outpot neuron to update that weight
-						for(let h = 0;h < activeNeurons[j].outgoing[k].n.incoming.length;h++){
-							//Found the memory address that controls the weight
-							if(activeNeurons[j].outgoing[k].n.incoming[h].n === activeNeurons[j]){
-								activeNeurons[j].outgoing[k].n.incoming[h].w -=
-									learningrate * activeNeurons[j].outgoing[k].n.error * activeNeurons[j].output;
-								sum += 
-									activeNeurons[j].outgoing[k].n.error * 
-									activeNeurons[j].outgoing[k].n.incoming[h].w;
-							}
-						}
-					}
-				}
-				//No outputs, so the error was already assigned to us in the output layer
-				else{
-					sum = activeNeurons[j].error;
-				}
-				
-				
-				activeNeurons[j].error = sum * activeNeurons[j]._output;
-
-				//Updat ethe bais
-				activeNeurons[j].bias -= learningrate * activeNeurons[j].error;
-
-				//Find next neurons to propgate through
-				for(let k = 0;k < activeNeurons[j].incoming.length;k++){
-					if(neuronsAlreadyLookedAt.indexOf(activeNeurons[j].incoming[k].n) === -1){
-						neuronsAlreadyLookedAt.push(activeNeurons[j].incoming[k].n);
-						activeNeurons.push(activeNeurons[j].incoming[k].n);
-					}
-					//else{dont bother updating, already looked at once... 0_o} TODO maybe more?
-				}
-
-				activeNeurons.splice(j, 1);
-			}
-		} while(activeNeurons.length > 0);
-
-		return totalError;
-	};
-
-	calculateDiagnostics() {
-		//Calculate longest path per each output to get to each input
-		//Active routes
-		let activeRoutes = [];//{a: [2, 21, 78, 32]}
-		let winningRoutes = [];
-		//Neurons already visited
-		let idsHitAlready = [];//[34, 12, 8, 3]
-
-		//Start at the outputs, add all the starting routes
-		for(let i = 0;i < this.layers[this.layers.length-1].length;i++){
-			let newPath = {};
-			newPath.a = [];
-			newPath.a.push(this.layers[this.layers.length-1][i].id);
-			idsHitAlready.push(this.layers[this.layers.length-1][i].id);
-			activeRoutes.push(newPath);
-		}
-
-		//Set the list of ids that are inputs
-		let inputIds = [];
-		for(let i = 0;i < this.layers[0].length;i++){
-			inputIds.push(this.layers[0][i].id);
-		}
-
-		//WHile less than 90% of the neurons have not been looked ay YET
-		while(idsHitAlready.length < (0.0+(this.ID_TEMPLATE_ - this.layers[0].length)) * 0.96){
-			for(let i = activeRoutes.length-1;i > -1;i--){
-				let thisNeur = this.getNeuronByID(activeRoutes[i].a[activeRoutes[i].a.length-1]);
-	
-				//Check if neuron IS an input
-				if(inputIds.indexOf(thisNeur.id) > -1){
-					//WINNER CAWSE
-					//console.log("ROUTE FOUND", activeRoutes[i].a.length);
-					//console.log(activeRoutes[i].a);
-					winningRoutes.push({"a": [...activeRoutes[i].a]});//add to winner!
-					//activeRoutes.splice(i, 1);//remove that boy from active
-				}
-				//NOT YET an input
-				else{
-					//Get keys
-					let tgs = Object.keys(thisNeur.incoming.targets);
-					//variable for keeping track of if a path has yielded any new viable paths
-					let newPathsMade = 0;
-					for(let j = 0;j < tgs.length;j++){
-						let num_id = Number(tgs[j]);
-						//Doesnt exist in alraeedy checked 
-						if(idsHitAlready.indexOf(num_id) === -1){
-							//ADD NEW ROUTE (TODO= remove old one)
-							activeRoutes.push({
-								"a": [...activeRoutes[i].a]
-							});
-							activeRoutes[activeRoutes.length-1].a.push(num_id);
-	
-							//If not an input id, add it to already seen 
-							if(inputIds.indexOf(num_id) === -1){
-								idsHitAlready.push(num_id);
-							}
-							newPathsMade++;
-						}
-						//Does exist in already checked, leave
-						else{
-	
-						}
-					}
-				}
-				activeRoutes.splice(i, 1);
-			}
-			let smlrThan = (this.ID_TEMPLATE_ - this.layers[0].length)*0.96;
-			//console.log("idsHitAlready", idsHitAlready.length, "<", smlrThan);
-		}///ALL VICTORY ROUTES FROM OUTPUT TO INPUT
-		console.log("Winning Routes:", winningRoutes.length);
-
-		//Time Index gaps from inputs
-		let timeIndexGaps = [];
-		//Now calculate the average + Min/Max wait time between neuron firings
-		let minGap = 999;
-		let maxGap = 0;
-		let negativeOneConnections = 0;//# of connections that have never had information flow through them
-
-		for(let i = 0;i < this.layers.length;i++){
-			for(let j = 0;j < this.layers[i].length;j++){
-				let ins = Object.keys(this.layers[i][j].incoming.lastactive);
-				for(let k = 0;k < ins.length;k++){
-					if(this.layers[i][j].incoming.lastactive[ins[k]] !== -1){
-						//console.log(i, j, ins[k], this.layers[i][j].incoming.lastactive[ins[k]]);
-						let g = this.oracle.timeindex - this.layers[i][j].incoming.lastactive[ins[k]];
-						timeIndexGaps.push(g);
-						if(g > maxGap) maxGap = g;
-						else if(g < minGap) minGap = g;
-					}
-					else{
-						negativeOneConnections++;
-						//console.log("SUM NEGTIVES id", this.layers[i][j].id, );
-					}
-				}
-			}
-		}
-
-		let ave = 0.0;
-		for(let jj = 0;jj < timeIndexGaps.length;jj++){
-			ave += timeIndexGaps[jj];
-		}
-		ave /= (timeIndexGaps.length+0.0);
-
-		console.log("min", minGap);
-		console.log("ave", ave);
-		console.log("max", maxGap);
-		console.log(timeIndexGaps.length, " gaps");
-		console.log("negativeOneConnections", negativeOneConnections);
-		console.log('recorded at oracle.timeindex', this.oracle.timeindex);
-		//inputs listings
-		console.log('input list for output cells');
-		for(let y = 0;y < this.layers[this.layers.length-1].length;y++){
-			console.log(Object.keys(
-				this.layers[this.layers.length-1][y].incoming.lastactive
-			));
-		}
-	}
-	
-	getNeuronInfo(indexOfNeu = 0) {
-		for(let b = 0;b < this.layers.length;b++){
-			for(let c = 0;c < this.layers[b].length;c++){
-				if(this.layers[b][c].id === indexOfNeu){
-					let neu = this.layers[b][c];
-
-					let contents = {};
-					contents.connectomeTimeIndex = this.oracle.timeindex;
-					contents.id = this.layers[b][c].id;
-					contents.ins = [];
-					contents.ins_w = [];
-					contents.outs = [];
-					contents.outs_w = [];
-					contents.layer_x = b;
-					contents.layer_y = c;
-					contents.bias = this.layers[b][c].bias;
-					contents.threshold = this.layers[b][c].threshold;
-					contents.potential = this.layers[b][c].potential;
-					contents.output = this.layers[b][c].output;
-					contents._output = this.layers[b][c]._output;
-					contents.error = this.layers[b][c].error;
-					contents._error = this.layers[b][c]._error;
-					
-					for(let i = 0;i < neu.incoming.length;i++){
-						contents.ins.push(neu.incoming[i].n.id);
-						contents.ins_w.push(neu.incoming[i].w);
-					}
-					for(let i = 0;i < neu.outgoing.length;i++){
-						contents.outs.push(neu.outgoing[i].n.id);
-						contents.outs_w.push(neu.outgoing[i].w);
-					}
-
-					//Get the nexts 
-					contents.incomingSignals = [];
-					for(let kk = 0;kk < this.oracle.nexts.length;kk++){
-						if(this.oracle.nexts[kk].o == contents.id){
-							contents.incomingSignals.push({"f": this.oracle.nexts[kk].f, "v": this.oracle.nexts[kk].v});
-						}
-					}
-					return contents;
-				}
-			}
-		}
-		return -1;
 	}
 
 	//Get the gene
@@ -494,15 +149,6 @@ class SmartBoy{
 		boyy.geneObject.totalNeuronPortionSize = totalPortion
 
 	}
-
-
-
-
-
-
-
-
-
 
 
 	static express_gene_object_v1(boyy){
@@ -667,6 +313,130 @@ class SmartBoy{
 	}
 
 
+	//Method to return the next number in the gene
+	ge() {
+		let theGE = this.gene[this.geneIndexTracker]
+		this.geneIndexTracker = (this.geneIndexTracker+1) % this.gene.length
+		return theGE
+	}
+
+	//Called right before refreshing the gene object
+	geReset(){
+		this.geneIndexTracker = 0
+	}
+
+	//Method get total number of times a gene was used
+	//(call only after constructor)
+	geTotal(){
+		return -1;
+	}
+	
+
+	//Helper function needs to be declared up here before connect
+	getNeuronByID(idd){
+		for(let b = 0;b < this.layers.length;b++){
+			for(let c = 0;c < this.layers[b].length;c++){
+				if(idd === this.layers[b][c].id) return this.layers[b][c];
+			}
+		}
+		return null;
+	}
+
+
+	//this.neuronAt = (ind) => {
+	//	return this.layers[0].concat(this.layers[1]).concat(this.layers[2])[ind];
+	//};
+
+	//inputs needed to be smaller than the number of input neurosn in the first layer
+	activate(inputs){
+		for(let j = 0;j < inputs.length;j++){
+			//If the stimulatio nis 0, dont bother the outputs of this neuron, so don't stimulate...
+			if(inputs[j] > 0){
+				Neuron.Neuron_stimulate(
+					this.oracle.nexts, 
+					this.layers[0][j], 
+					inputs[j]
+				);
+			}
+			
+		}
+	}
+
+	//SLeep mode?
+	resetFiredCount() {
+		for(let i = 0;i < this.layers.length;i++){
+			for(let j = 0;j < this.layers[i].length;j++){
+				this.layers[i][j].timesfired = 0;
+			}
+		}
+	}
+
+	step() {
+		this.oracle.timeindex++;
+		let newDischarge = 0.0;
+		let neuronsCheckedSoFar = [];
+
+		while(this.oracle.nexts.length > 0){
+			let signal = this.oracle.nexts.shift();
+			let neu = signal.o;
+
+			if(neuronsCheckedSoFar.indexOf(neu) === -1){
+				neuronsCheckedSoFar.push(neu);
+			}
+			else{
+			}
+			
+			//Add the val of this signal to the potential
+			var getWeight = function(nnn, neufrom){
+				for(let i = 0;i < nnn.incoming.length;i++) 
+					if(nnn.incoming[i].n === neufrom) return nnn.incoming[i];
+			};
+			let ww = getWeight(neu, signal.f);
+			neu.potential += ww.w * signal.v;
+		}
+
+		//While there are neurons to fire?
+		for(let k = 0;k < neuronsCheckedSoFar.length;k++){
+			if(neuronsCheckedSoFar[k].potential + neuronsCheckedSoFar[k].bias > neuronsCheckedSoFar[k].threshold){
+				let spillage = neuronsCheckedSoFar[k].potential - neuronsCheckedSoFar[k].threshold;//TODO <- this could mean something
+
+				let sigmoidX = Math.abs(neuronsCheckedSoFar[k].potential);
+				neuronsCheckedSoFar[k]._output = 0.0 + neuronsCheckedSoFar[k].output;
+				neuronsCheckedSoFar[k].output = Util.relu(sigmoidX); //sigmoid(sigmoidX);// + spillage/neuronsCheckedSoFar[k].threshold;//neuronsCheckedSoFar[k].potential / neuronsCheckedSoFar[k].threshold;//1.0;
+				
+				neuronsCheckedSoFar[k].potential = 0.0;//spillage/2.5;// 0;//+ spillage *0.01? lol maybe
+				neuronsCheckedSoFar[k].timesfired++;
+				neuronsCheckedSoFar[k].lastfired = this.oracle.timeindex;
+
+				//Send nexts out
+				for(let i = 0;i < neuronsCheckedSoFar[k].outgoing.length;i++){
+					let valToAdd = {
+						"f": neuronsCheckedSoFar[k],
+						"o": neuronsCheckedSoFar[k].outgoing[i].n,
+						"v": neuronsCheckedSoFar[k].output
+					};
+					this.oracle.nexts.push(valToAdd);
+					newDischarge += valToAdd.v;
+				}
+			}
+			//Neuron cannot fire!
+			else{
+
+			}
+		}
+
+		let theOuts = [];
+		for(let c = 0;c < this.layers[this.layers.length-1].length;c++){
+			//console.log(this.layers[this.layers.length-1][c].id);
+			theOuts.push(this.layers[this.layers.length-1][c].output + 0);
+			this.layers[this.layers.length-1][c].output = 0;
+		}
+		return theOuts;
+	}
+
+	
+
+
 
 
 
@@ -719,7 +489,7 @@ class Neuron {
     constructor(temp_id, theNeuronDefaultDiam){
         this.id = temp_id;
 
-        this.bias = 0.0;//OVERLORD_RAND.random()*2 - 1;
+        this.bias = 0;//OVERLORD_RAND.random()*2 - 1;
     
         //For recurrence 
         this.potential = 0.0;

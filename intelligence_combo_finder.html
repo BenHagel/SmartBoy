@@ -9,18 +9,18 @@
 		<script src="src/StdNn.js"></script> <!--This is a standard class for classic nn's-->
 		<!--<script src="GeneticNeuralNetwork.js"></script>-->
 		<!-- <script src="src/Neuron.js"></script>   <=Now incldued in the SmartBoy file-->
-		<script src="src/SmartBoy_5_Ringcore.js"></script>
+		<!-- <script src="src/SmartBoy_5_Ringcore.js"></script> -->
+		<script src="src/SmartBoy_5_Nt.js"></script>
 		<!--World for gene to explore-->
-		<script src="src/World.js"></script>
-		<script src="src/GeneticEvo.js"></script>
+		<script src="src/World_.js"></script>
 		
 		<!--UI-->
 		<!-- <script src="sketch_Ringcore.js"></script> -->
 		<script src="sketch_Nt.js"></script>
 		<script src="p5.js"></script>
 		
-		<title>User Interface</title>
-
+		<title>Information Node Editor</title>
+		<!-- can create nodular pieces of code -->
 		<script>
 			window.addEventListener("gamepadconnected", function(e) {
 				var gp = navigator.getGamepads()[e.gamepad.index];
@@ -126,12 +126,9 @@
 			<button onclick="clearHiddens()">Clear Hiddens Connections</button>
 			<br>
 			<button id="uiModeToggler" onclick="switchMode()">Gene Mode</button>
-			<textarea id="hookupConfig" rows="20" cols="32">
-				100-b
-				1-h
-				20-b
-				1-f
-			</textarea>
+			<!-- <textarea id="hookupConfig" rows="20" cols="32">
+
+			</textarea> -->
 			<br>
 			<br>
 			<br>
