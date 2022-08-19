@@ -71,6 +71,13 @@ function propogateNewTemplateObjectWRandomSeed(){
 
   updateOutputGeneratorUI(WFC_TEMPLATE_2)
 
+  console.log(JSON.stringify(WFC_TEMPLATE_2.output_possibility_grid[12][4]));
+  console.log(
+    WFC_TEMPLATE_1.kernels[0].ks[
+      WFC_TEMPLATE_2.output_possibility_grid[12][4].topLeftOfKernelsLeft[0][12]
+    ]
+  )
+
 }
 
 
@@ -134,7 +141,13 @@ function stepExistingT2(WFC_2){
 }
 
 
-
+function stepExistingT2_80(WFC_2){
+  // console.log('interests:')
+  // console.log(JSON.stringify(WFC_2.cells_of_interest))
+  for(let j = 0;j < 80;j++){
+    stepExistingT2(WFC_2);
+  }
+}
 
 // function stepExistingT2_80(WFC_2){
 //   // console.log('interests:')
@@ -153,6 +166,11 @@ function stepExistingT2(WFC_2){
 function updateOutputGeneratorUI(WFC_2){
   document.getElementById("stepCountDisplay").innerHTML = WFC_2.elapsed_steps
   document.getElementById("nextCellsDisplay").innerHTML = WFC_2.cells_of_interest.length
+}
+
+function wrapChange(){
+  let cbox = document.getElementById("outputWraps");
+  console.log(cbox.checked)
 }
 
 
