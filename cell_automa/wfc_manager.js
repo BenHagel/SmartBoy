@@ -704,18 +704,17 @@ function WFC_castTheBigSweepingNet(WFC_2, x, y){
 function WFC_collapseAllPossibleCells(WFC_2){
 
   //Get random from the lowest possible entropy cells that aren't 1
-  let leastUncertainCell = null
   let randoOffsetX = Math.floor(WFC_2.cr.random() * WFC_2.output_possibility_grid.length)
   let randoOffsetY = Math.floor(WFC_2.cr.random() * WFC_2.output_possibility_grid[0].length)
   let xxx = -1
   let yyy = -1
+  let leastUncertainCell = null
   let lowestKernelCountYet = 9999999
   for(let i = 0;i < WFC_2.output_possibility_grid.length;i++){
     let ii = (i+randoOffsetX) % WFC_2.output_possibility_grid.length
     for(let j = 0;j < WFC_2.output_possibility_grid[ii].length;j++){
       let jj = (j+randoOffsetY) % WFC_2.output_possibility_grid[ii].length
-      let sus = WFC_2.output_possibility_grid[ii][jj]
-      //TODO add on the multiple possibilty kernel size type
+      let sus = WFC_2.output_possibility_grid[ii][jj] //TODO add on the multiple possibilty kernel size type
       if(sus.topLeftOfKernelsLeft[0].length < lowestKernelCountYet && sus.possibleValsLeft.length > 1){
         leastUncertainCell = sus
         lowestKernelCountYet = sus.topLeftOfKernelsLeft[0].length//where do u pick it? checkj ciollapse vlaue
@@ -725,8 +724,8 @@ function WFC_collapseAllPossibleCells(WFC_2){
     }
   }
 
+  //Get random distribution pick of value from available kernels left :)
   if(leastUncertainCell){
-    //Get random distribution pick of value from available kernels left :)
     let collapseValue = WFC_getRandoValFromKernelsLeft(WFC_2, xxx, yyy)//gotta look at this shit again fo show
     //leastUncertainCell.possibleValsLeft = [collapseValue]//From being [1,2,3,5,12,14]
     WFC_manualCollapse(WFC_2, xxx, yyy, collapseValue)

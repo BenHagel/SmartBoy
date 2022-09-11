@@ -105,14 +105,15 @@ function stepExistingT2(WFC_2){
   //Example n = 3 - which cells have kernel objects:
   //  output: 8x8
   /*
-  OOOOOOXX
-  OOOOOOXX
-  OOOOOOXX
-  OOOOOOXX
-  OOOOOOXX
-  OOOOOOXX
-  XXXXXXXX
-  XXXXXXXX
+  OOOOOOX   XX
+  OOOOOOX   XX
+  OOOOOOX   XX
+  OOOOOOX   XX
+  OOOOOOX   XX
+  OOOOOOX   XX
+   
+  XXXXXXX   XX
+  XXXXXXX   XX
   */
  //O = has an nxn kernel object (3x3)
  //X = has no nxn kernel object (UNLESS WRAP IS ENABLED)
