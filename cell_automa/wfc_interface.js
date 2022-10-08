@@ -71,13 +71,6 @@ function propogateNewTemplateObjectWRandomSeed(){
 
   updateOutputGeneratorUI(WFC_TEMPLATE_2)
 
-  console.log(JSON.stringify(WFC_TEMPLATE_2.output_possibility_grid[12][4]));
-  console.log(
-    WFC_TEMPLATE_1.kernels[0].ks[
-      WFC_TEMPLATE_2.output_possibility_grid[12][4].topLeftOfKernelsLeft[0][12]
-    ]
-  )
-
 }
 
 
@@ -89,7 +82,7 @@ function stepExistingT2(WFC_2){
 
   
 
-  let resultingAmountOfInterestingCells = WFC_collapseAllPossibleCells(WFC_2) 
+  let resultingAmountOfInterestingCells = WFC_collapseLowestEntropyKernel(WFC_2) 
 
   //Option: switch the reading of the kernels to wrapping: ON/OFF
   //For kernels that are 3x3 (nxn)
@@ -155,7 +148,7 @@ function stepExistingT2_80(WFC_2){
 //   // console.log(JSON.stringify(WFC_2.cells_of_interest))
 //   for(let j = 0;j < 280;j++){
 //     let resultingAmountOfInterestingCells = 
-//       WFC_collapseAllPossibleCells(WFC_2)
+//       WFC_collapseLowestEntropyKernel(WFC_2)
 //     updateOutputGeneratorUI(WFC_2)
 //   }
 // }
