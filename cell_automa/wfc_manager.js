@@ -50,7 +50,7 @@ propogateNewTemplateObjectWRandomSeed()
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Actual WFC
+//////////WFC logic
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Chain of functions that pass off the object to one another 
@@ -59,7 +59,8 @@ function WFC_getKernels(the_grid, kernel_range){//2d array of integers, array of
   let T1 = {
     grid: the_grid,
     kernels: kernel_range, //List of: {n: 1-x, ks: [{}]}
-    possible_values: []
+    possible_values: [],
+    last_kern_placed: -1
   };
 
   let newKernelFrom = function(g, kr, xx, yy){
@@ -115,13 +116,16 @@ function WFC_getKernels(the_grid, kernel_range){//2d array of integers, array of
 
 function WFC_initGenerator(WFC_1, output_grid_size, randoSeed){
 
+  
+  
+
   let T2 = {
     t1: WFC_1,
-    cr: new PseudRand(343+Math.floor(Math.random()*80834218)),
+    cr: new PseudRand(randoSeed),
     output_grid_size: output_grid_size,
     output_possibility_grid: [],  //the current state of the possibilities grid
-    cells_of_interest: [], //the next cells to collapse
-    elapsed_steps: 0
+    elapsed_steps: 0,
+    dead_cells: []//grows as time goes on
   };
 
   T2.output_possibility_grid = new Array(T2.output_grid_size)
@@ -211,10 +215,183 @@ function WFC_manualCollapse(WFC_2, x, y, value){
   }
 }
 
-function WFC_getPossibleValuesOfCellFromSurroundingPossibleKernels(){
-  //And depending on the possibleVals that cell turns out to be - 
-  //Do big net around location, update the kernels - if change to possible value
-  
+// Returns a -1 if it's not even possible, 
+// and 0 would be returned if all the values are already collapsed
+function WFC_measurePotentialKernelDestruction(WFC_2, kern, x, y, dispX, dispY){
+  let destructionTotal = 0
+  for(let xi = 0;xi < kern.length;xi++){  //xi, and yi variables just go through all effected cells that could have their pVal count changed
+    for(let yi = 0;yi < kern[xi].length;yi++){
+      
+      let farLeftX = x+xi-dispX
+      farLeftX = (farLeftX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+      let farTopY = y+yi-dispY
+      farTopY = (farTopY + WFC_2.output_possibility_grid[farLeftX].length) % 
+        WFC_2.output_possibility_grid[farLeftX].length
+      
+      // If not even possible for this kernel to be here, just return -1 
+      let possibleValsLeft = WFC_2.output_possibility_grid[farLeftX][farTopY].possibleValsLeft
+      if(possibleValsLeft.indexOf(kern[xi][yi]) < 0){
+        return -1
+      } else {
+        //console.log("dest:", possibleValsLeft)
+        destructionTotal += possibleValsLeft.length - 1;//  This is a measure of how many possible values 
+        //would be destroyed for this cell were the kernel to be placed here with these dispX and dispY values
+      }
+
+
+
+    }
+  }
+
+  return destructionTotal;
+}
+
+// Collapses the possible value space according to the kernel, the location, and the displacement
+function WFC_actuallyPlaceKernel(WFC_2, kern, x, y, dispX, dispY){
+
+  let protectedCells = [];
+
+  for(let xi = 0;xi < kern.length;xi++){  //xi, and yi variables just go through all effected cells that could have their pVal count changed
+    for(let yi = 0;yi < kern[xi].length;yi++){
+      let adjustedX = x+xi-dispX
+      adjustedX = (adjustedX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+      let adjustedY = y+yi-dispY
+      adjustedY = (adjustedY + WFC_2.output_possibility_grid[adjustedX].length) % WFC_2.output_possibility_grid[adjustedX].length
+      
+      // Collapse these values
+      WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft = [kern[xi][yi]];
+
+      protectedCells.push({x:adjustedX, y: adjustedY});
+
+    }
+  }
+
+  return protectedCells
+}
+
+// This updates the possible values around the last placed kernel - 
+// will need to update (kernSize+2)^2 - (kernToSize)^2 cells 
+function WFC_updateThePossibleValsOfCellsAroundLastPlacedKernel(WFC_2, kSize, x, y, dispX, dispY, protectedCells){
+  let checkLength = 3;//2*kSize - 1
+
+  // Sliding the kernel around the perimeter always makes 9 iterations
+  for(let sx = 0;sx < checkLength;sx++){
+    for(let sy = 0;sy < checkLength;sy++){
+
+      // DO EFFICIENTLY: these are the target possible values left for each of these 
+      // if the new filtered values ever all equal these sizes, then just abort and dont bother
+      // checking the rest of the kernels (because all the kernels get filtered)
+      //let targetPossibleVals = new Array(kSize); for(let gog = 0;gog < targetPossibleVals.length;gog++) targetPossibleVals[gog] = new Array(kSize);
+
+      let totalValidKernelsAtThisWindow = [];
+
+      // Loop through all possible kernels
+      for(let r = 0;r < WFC_2.t1.kernels[0].ks.length;r++){
+        let thisKern = WFC_2.t1.kernels[0].ks[r];
+        let isKernelGood = true;
+
+        // Loop through each spot the kernel will touch (to check if its valid)
+        for(let xi = 0;xi < kSize;xi++){  //xi, and yi variables just go through all effected cells that could have their pVal count changed
+          for(let yi = 0;yi < kSize;yi++){
+
+            let adjustedX = x-dispX+xi+sx - Math.floor(checkLength/2);//1   //Needs to move one left to cover perimeter
+            adjustedX = (adjustedX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+            let adjustedY = y-dispY+yi+sy - Math.floor(checkLength/2);//1   //Needs to move one up   to cover perimeter
+            adjustedY = (adjustedY + WFC_2.output_possibility_grid[adjustedX].length) % WFC_2.output_possibility_grid[adjustedX].length
+            
+            //If even one value of kernel is not contained in even one of the cells, whole kernel bad
+            if(WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft.indexOf(thisKern[xi][yi]) < 0){
+              isKernelGood = false;
+              xi = kSize;
+              yi = kSize;
+            }
+            // Collapse these values
+            //WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft = [kern[xi][yi]];
+      
+      
+      
+          }
+        }
+
+        // If this kern is good valid here, add the possibilities to their respective spots over the space of kSize^2
+        // ^^^ (SAME LOOP AS ABOVE) ^^^ 
+        if(isKernelGood){
+          totalValidKernelsAtThisWindow.push(thisKern);
+        }
+
+      }
+
+
+      // if some  kernels are valid here, set possible vals to nothing (except if a protected cell)
+      if(totalValidKernelsAtThisWindow.length > 0){
+        for(let xi = 0;xi < kSize;xi++){  //xi, and yi variables just go through all effected cells that could have their pVal count changed
+          for(let yi = 0;yi < kSize;yi++){
+            let adjustedX = x-dispX+xi+sx - Math.floor(checkLength/2);//1   //Needs to move one left to cover perimeter
+            adjustedX = (adjustedX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+            let adjustedY = y-dispY+yi+sy - Math.floor(checkLength/2);//1   //Needs to move one up   to cover perimeter
+            adjustedY = (adjustedY + WFC_2.output_possibility_grid[adjustedX].length) % WFC_2.output_possibility_grid[adjustedX].length
+
+            let isProtectedCell = false;
+            for(let h = 0;h < protectedCells.length;h++){
+              if(adjustedX === protectedCells[h].x && adjustedY === protectedCells[h].y){ 
+                isProtectedCell = true; 
+                h = protectedCells.length;
+              }
+            }
+
+            if(!isProtectedCell){
+              WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft = []
+            }
+
+
+          }
+        }
+      }
+
+
+      // Loop through all the valid kernels, for this kernel offset (sx, sy) and if not a 
+      // protected cell, if it is : re calculate the possible vals
+      for(let r = 0;r < totalValidKernelsAtThisWindow.length;r++){
+        let theValidKern = totalValidKernelsAtThisWindow[r];
+
+        for(let xi = 0;xi < kSize;xi++){
+          for(let yi = 0;yi < kSize;yi++){
+            let adjustedX = x-dispX+xi+sx - Math.floor(checkLength/2);//1
+            adjustedX = (adjustedX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+            let adjustedY = y-dispY+yi+sy - Math.floor(checkLength/2);//1
+            adjustedY = (adjustedY + WFC_2.output_possibility_grid[adjustedX].length) % WFC_2.output_possibility_grid[adjustedX].length
+
+            // Now we need to make sure that it is NOT a protected cell - and aggregate those
+            let isProtectedCell = false;
+            for(let h = 0;h < protectedCells.length;h++){
+              if(adjustedX === protectedCells[h].x && adjustedY === protectedCells[h].y){ 
+                isProtectedCell = true; 
+                h = protectedCells.length;
+              }
+            }
+
+            if(!isProtectedCell){
+              let vals = WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft
+              if(vals.indexOf(theValidKern[xi][yi] < 0)){
+                vals.push(theValidKern[xi][yi]);
+                //if(vals.length > 20)
+              }
+            }
+
+            
+
+          }
+        }
+
+      }
+
+      
+      
+
+
+    } // sliding kern window y
+  } // sliding kern window x
+
 }
 
 
@@ -330,7 +507,7 @@ function WFC_collapseKernelAt_AndChangePossibleValues_AndChangeToTheOneKernelPos
   // Kernel sizes always 0 for this WFC version
   let kd = 0
 
-  // List of cells that just got collapsed 
+  // List of cells that just got collapsed - so dont bother computing their new possible values (happens 2 functions later)
   let safeCells = []
 
   // Set the only kernel possibility (because that's what its bout to collapse into)
@@ -373,8 +550,30 @@ function WFC_bigSquareUpdate_KernelsFromTheCollapse(WFC_2, x, y){
       WFC_applyKernelShaveFromPossibleVals(WFC_2, farLeftX, farTopY, kd);
 
     }
-
   }
+
+  // Just do the 4 cardinal squares around the kernel that collapsed (smoller more subtle)
+  // let cc = [
+  //   {x: -1, y: 0},
+  //   {x: 0, y: -1},
+  //   {x: 1, y: 0},
+  //   {x: 0, y: 1},
+    
+  //   {x: -1, y: -1},
+  //   {x: 1, y: -1},
+  //   {x: 1, y: 1},
+  //   {x: -1, y: 1}
+  // ]
+
+  // for(let i = 0;i < cc.length;i++){
+  //   let farLeftX = x+cc[i].x //must be at least 0
+  //   farLeftX = (farLeftX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+  //   let farTopY = y+cc[i].y //must be at least 0
+  //   farTopY = (farTopY + WFC_2.output_possibility_grid[farLeftX].length) % WFC_2.output_possibility_grid[farLeftX].length
+
+  //   WFC_applyKernelShaveFromPossibleVals(WFC_2, farLeftX, farTopY, kd);
+  // }
+      
 }
 
 // Loop through the kernels just updated and change their effected cells' possibleVals array
@@ -395,8 +594,29 @@ function WFC_bigSquareUpdate_PossibleValsFromPreviousKernelCollapses(WFC_2, x, y
       WFC_updatePossibleValsFromKernelPossibilities(WFC_2, kernelCellX, kernelCellY, cellsPossibleValJustCollapsed, kd);
 
     }
-
   }
+
+  // let cc = [
+  //   {x: -1, y: 0},
+  //   {x: 0, y: -1},
+  //   {x: 1, y: 0},
+  //   {x: 0, y: 1},
+
+  //   {x: -1, y: -1},
+  //   {x: 1, y: -1},
+  //   {x: 1, y: 1},
+  //   {x: -1, y: 1}
+  // ]
+
+  // for(let i = 0;i < cc.length;i++){
+  //     let kernelCellX = x+cc[i].x //must be at least 0
+  //     kernelCellX = (kernelCellX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+  //     let kernelCellY = y+cc[i].y //must be at least 0
+  //     kernelCellY = (kernelCellY + WFC_2.output_possibility_grid[kernelCellX].length) % WFC_2.output_possibility_grid[kernelCellX].length
+      
+  //     WFC_updatePossibleValsFromKernelPossibilities(WFC_2, kernelCellX, kernelCellY, cellsPossibleValJustCollapsed, kd);
+  // }
+
 }
 
 
@@ -431,8 +651,10 @@ function WFC_collapseLowestEntropyKernel(WFC_2){
   //Get random distribution pick of value from available kernels left :)
   if(leastUncertainCell){
     // This ends up being random + in statistical proportion to the template image
-    let randomValFromRemainingIndexArray = Math.floor([WFC_2.cr.random() * leastUncertainCell.topLeftOfKernelsLeft[0].length]);
-    let indexLookUpReference = leastUncertainCell.topLeftOfKernelsLeft[0][randomValFromRemainingIndexArray]
+    let randomValFromRemainingIndexArray = 
+      Math.floor([WFC_2.cr.random() * leastUncertainCell.topLeftOfKernelsLeft[0].length]);
+    let indexLookUpReference = 
+      leastUncertainCell.topLeftOfKernelsLeft[0][randomValFromRemainingIndexArray]
     // Get the actual kernel from the lookup reference
     let kernToCollapseInto = WFC_2.t1.kernels[0].ks[indexLookUpReference];
 
@@ -454,7 +676,8 @@ function WFC_collapseLowestEntropyKernel(WFC_2){
     WFC_bigSquareUpdate_PossibleValsFromPreviousKernelCollapses(WFC_2, xxx, yyy, cells_PossibleValsJustCollapsed)
 
     // Collapse into KERNEL
-
+    
+    WFC_2.elapsed_steps++;
   }
   else{
     console.log("==>>>> NO UNCERTAIN CELLS <<<<<==")
@@ -464,6 +687,123 @@ function WFC_collapseLowestEntropyKernel(WFC_2){
   return null
 }
 
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+/////////////////////////  E  X  P  E  R  I  M  E  N  T  A  L
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function WFC_collapseLowestEntropyCell(WFC_2){
+  //Get random from the lowest possible entropy cells that aren't 1
+  let randoOffsetX = Math.floor(WFC_2.cr.random() * WFC_2.output_possibility_grid.length)
+  let randoOffsetY = Math.floor(WFC_2.cr.random() * WFC_2.output_possibility_grid[0].length)
+  let xxx = -1
+  let yyy = -1
+  let leastUncertainCell = null
+  let lowestPossibilityCountYet = 9999999
+
+  // Start at random location and grab the lowest value of possible VALUES (not kernels)
+  for(let i = 0;i < WFC_2.output_possibility_grid.length;i++){
+    let ii = (i+randoOffsetX) % WFC_2.output_possibility_grid.length;
+    for(let j = 0;j < WFC_2.output_possibility_grid[ii].length;j++){
+      let jj = (j+randoOffsetY) % WFC_2.output_possibility_grid[ii].length;
+      
+      let sus = WFC_2.output_possibility_grid[ii][jj]
+      if(sus.possibleValsLeft.length < lowestPossibilityCountYet && sus.possibleValsLeft.length > 0){
+        leastUncertainCell = sus
+        lowestPossibilityCountYet = sus.possibleValsLeft.length//where do u pick it? checkj ciollapse vlaue
+        xxx = ii
+        yyy = jj
+      }
+    }
+  }
+
+  // Found a cell that is OR is tied with having the lowest possible value count
+  if(leastUncertainCell){
+    console.log("lowest entrpopy cell found @", xxx, yyy, "w entropy", lowestPossibilityCountYet)
+    let listOfKernels = WFC_2.t1.kernels[0].ks;
+    let kernelSize = WFC_2.t1.kernels[0].n;
+
+    // TODO -  Rank order the possible kernels 
+
+    let leastDestructiveKernelIndex = -1;
+    let associatedDispX = -1;
+    let associatedDispY = -1;
+    let leastDestructiveKernelsValue = -1;
+
+    // BUT for now - just start at random index until a kernel + its position is discovered, and choose that one
+    let randomStartIndex = Math.floor(WFC_2.cr.random() * listOfKernels.length);
+
+    // Loop through all the kernels, and if you fin d
+    for(let i = 0;i < listOfKernels.length;i++){
+      let ri = (i+randomStartIndex) % listOfKernels.length;
+      let kernToCheck = listOfKernels[ri];
+
+      // Loop through all configurations of this kernel on the "xxx", "yyy" spot
+      // and find the least "destructive" configuration that still removes >0 possible vals
+      let leastDestructiveDispX = -1;
+      let leastDestructiveDispY = -1;
+      let currentDestructionValue = Number.MAX_SAFE_INTEGER;
+
+      // Double loop tests all the possible configurations of this kernel at location "xxx", "yyy"
+      for(let dispX = 0;dispX < kernelSize;dispX++){
+        for(let dispY = 0;dispY < kernelSize;dispY++){
+          // Destruction = measure of how many possible values across the kernel area will be removed 
+          let potentialDestruction = WFC_measurePotentialKernelDestruction(WFC_2, kernToCheck, xxx, yyy, dispX, dispY);
+
+          if(potentialDestruction > -1){  // Check if even valid  at all
+            if(potentialDestruction < currentDestructionValue && potentialDestruction > 0){  // Check if its an improvement over last measure AND if there would be any collapse at all
+
+              leastDestructiveDispX = dispX;
+              leastDestructiveDispY = dispY;
+              currentDestructionValue = potentialDestruction;
+
+            }
+          }
+        }
+      }
+
+
+      // If there are any valid kernel placements at all - then this would be the least destructive
+      if(leastDestructiveDispX !== -1 && leastDestructiveDispY !== -1){
+        console.log("Destruction amount:", currentDestructionValue)
+        let protectedCells = WFC_actuallyPlaceKernel(WFC_2, kernToCheck, xxx, yyy, leastDestructiveDispX, leastDestructiveDispY);
+        WFC_2.t1.last_kern_placed = ri;
+
+        // This updates the possible values around the kernel placed, so that the next round can make a more informed decision
+        // as to what kernel to place
+        WFC_updateThePossibleValsOfCellsAroundLastPlacedKernel(
+          WFC_2, kernelSize, 
+          xxx, yyy, 
+          leastDestructiveDispX, leastDestructiveDispY,
+          protectedCells
+        );
+        
+        // Break out of the loop
+        i = listOfKernels.length;
+      } else {
+        console.log("there are no valid placements of Any KERNS?!")
+      }
+
+
+    }
+
+    
+    WFC_2.elapsed_steps++;
+  }
+  else{
+    console.log("==>>>> NO UNCERTAIN CELLS <<<<<==")
+  }
+
+
+
+}
 
 
 

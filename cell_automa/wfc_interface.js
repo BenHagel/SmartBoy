@@ -1,3 +1,24 @@
+var VOICE_GOOD_TO_GO = false;
+var VOCAL = null;
+if ('speechSynthesis' in window) {
+  VOICE_GOOD_TO_GO = true;
+  VOCAL = window.speechSynthesis;
+  if(!VOCAL.getVoices()){ // They dony be loading?!
+
+  }
+}
+
+///// https://www.educative.io/answers/how-to-convert-text-to-speech-in-javascript
+
+function say(msg){
+  if(VOICE_GOOD_TO_GO){
+    var fff = new SpeechSynthesisUtterance(""+msg);
+    VOCAL.speak(fff);
+  }
+
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////Input updates
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -57,6 +78,8 @@ function updateOutputSize(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function propogateNewTemplateObjectWRandomSeed(){
+
+  say("OYE");
   
   //Get the value settings
   //Get settings from html objects
@@ -67,7 +90,11 @@ function propogateNewTemplateObjectWRandomSeed(){
   document.getElementById("kernelsFoundDeeper").innerHTML = WFC_TEMPLATE_1.kernels[0].ks.length
   document.getElementById("possibleValsFound").innerHTML = JSON.stringify(WFC_TEMPLATE_1.possible_values)
 
-  WFC_TEMPLATE_2 = WFC_initGenerator(WFC_TEMPLATE_1, output_grid_size, "randoSeed1_0")
+  let randomSeed = 343+Math.floor(Math.random()*80834218);
+  console.log("Seed:");
+  console.log(randomSeed);
+
+  WFC_TEMPLATE_2 = WFC_initGenerator(WFC_TEMPLATE_1, output_grid_size, randomSeed)
 
   updateOutputGeneratorUI(WFC_TEMPLATE_2)
 
@@ -76,13 +103,11 @@ function propogateNewTemplateObjectWRandomSeed(){
 
 
 function stepExistingT2(WFC_2){
-  //console.log('interests:')
-  // console.log(WFC_2.cells_of_interest.length)
-  // console.log(WFC_2.cells_of_interest)
 
   
 
-  let resultingAmountOfInterestingCells = WFC_collapseLowestEntropyKernel(WFC_2) 
+  //let resultingAmountOfInterestingCells = WFC_collapseLowestEntropyKernel(WFC_2);
+  WFC_collapseLowestEntropyCell(WFC_2) 
 
   //Option: switch the reading of the kernels to wrapping: ON/OFF
   //For kernels that are 3x3 (nxn)
@@ -136,22 +161,11 @@ function stepExistingT2(WFC_2){
 
 
 function stepExistingT2_80(WFC_2){
-  // console.log('interests:')
-  // console.log(JSON.stringify(WFC_2.cells_of_interest))
   for(let j = 0;j < 80;j++){
     stepExistingT2(WFC_2);
   }
 }
 
-// function stepExistingT2_80(WFC_2){
-//   // console.log('interests:')
-//   // console.log(JSON.stringify(WFC_2.cells_of_interest))
-//   for(let j = 0;j < 280;j++){
-//     let resultingAmountOfInterestingCells = 
-//       WFC_collapseLowestEntropyKernel(WFC_2)
-//     updateOutputGeneratorUI(WFC_2)
-//   }
-// }
 
 
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -159,7 +173,6 @@ function stepExistingT2_80(WFC_2){
 
 function updateOutputGeneratorUI(WFC_2){
   document.getElementById("stepCountDisplay").innerHTML = WFC_2.elapsed_steps
-  document.getElementById("nextCellsDisplay").innerHTML = WFC_2.cells_of_interest.length
 }
 
 function wrapChange(){

@@ -265,6 +265,18 @@ var sketch_template = function(p) {
             }
 
             p.noStroke()
+            // if this was the last kernel placed, highlight it
+            if(WFC_TEMPLATE_1.last_kern_placed === j){
+              p.fill(255);
+              p.rect(kernelCellSize*krn.length/2 - kernelCellSize/2,
+                kernelCellSize*krn[0].length/2 - kernelCellSize/2, 
+                kernelCellSize*krn.length * 1.1, 
+                kernelCellSize*krn[0].length * 1.1
+              )
+            }
+
+
+            
             for(let xx = 0;xx < krn.length;xx++){
               for(let yy = 0;yy < krn[xx].length;yy++){
                 let cellType = templatePossibilities[krn[xx][yy]];
