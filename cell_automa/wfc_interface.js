@@ -96,6 +96,8 @@ function propogateNewTemplateObjectWRandomSeed(){
 
   WFC_TEMPLATE_2 = WFC_initGenerator(WFC_TEMPLATE_1, output_grid_size, randomSeed)
 
+  console.log("Starting entropy:", WFC_getTotalEntropy(WFC_TEMPLATE_2));
+
   updateOutputGeneratorUI(WFC_TEMPLATE_2)
 
 }
