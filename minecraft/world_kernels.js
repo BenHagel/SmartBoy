@@ -1,19 +1,17 @@
-var width=512;
-var height=512
-var radius=10;
-var context_canvas = document.getElementById("canvForGPUToUse");
+
 let frame;
 
-var timeIndex = 0
 
 class World {
-    constructor() {
+    constructor(seed, contextHTMLCanvas) {
         const gpu = new GPU({
-            canvas: context_canvas,
+            canvas: contextHTMLCanvas,
             mode: 'gpu'
         });
 
-        const dim = 512;
+        const dim = 256;
+
+        this.timeIndex = 0;
 
         this.inicio = gpu.createKernel(
             function() {
@@ -26,7 +24,7 @@ class World {
 
         this.kernel = gpu.createKernel(
             function(m) {
-            var s = 512
+            var s = 256
             var sum = 0;
             var h = this.thread.x
             var k =  s-1-this.thread.y
@@ -61,6 +59,7 @@ class World {
     }
 
     next(){
+        this.timeIndex++;
         this.kernel(this.pixels)
         this.pixels=this.kernel.getPixels();
     }

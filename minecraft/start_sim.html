@@ -5,21 +5,39 @@
         <script src="gpu-browser.min.js"></script>
         <!-- <script src="https://unpkg.com/gpu.js@2.15.2/dist/gpu-browser.min.js"></script> -->
 		<script src="p5.min.js"></script>
+        <script src="StdNn.js"></script>
+        <script src="world_kernels.js"></script>
+        <script src="SmartBoy_6_Nt.js"></script>
+
         <style>
             body{
-                background-color: rgb(83, 106, 109);
+                background-color: rgb( 83, 106, 109 );
+            }
+            #p5BoyCanvas{
+                border: 5px solid black;
+                max-width: 450px;
             }
         </style>
     </head>
 
-    <body id="bbb">
+    <body>
         <canvas id="canvForGPUToUse"></canvas>
-        <script src="world_kernels.js"></script>
+        <div id="p5BoyCanvas">
+            <p>Boys Brain:</p>
+            <button onclick="addInputs()">Test Add Buttons</button>
+        </div>
 
         <script>
             // Oracle control occurs here
-            var gol = new World();
+            const randWorldSeed = Math.floor( Math.random() * 100300500 );
+            console.log( 'Rand world seed:', randWorldSeed );
+            var WORLD = new World( randWorldSeed, document.getElementById( 'canvForGPUToUse' ) );
 
+            const randBoySeed = Math.floor( Math.random() * 300300500 );
+            console.log( 'Rand boy seed:', randBoySeed );
+            let b = new SmartBoy6( 16, randBoySeed, document.getElementById('p5BoyCanvas'));
+
+            var BOY = b;
             // Create the Smart boy agent, std nn,
             // Show the smart boy in 2d grid w p5js 
             //      + its various NT and hover over for even more detailed information
@@ -32,15 +50,18 @@
             // 
 
             function tick() {
-                for(let y = 0;y < 8;y++) gol.draw();   
+                for(let y = 0;y < 1;y++) WORLD.draw();   
                 frame = requestAnimationFrame(tick);
-                timeIndex++
-                if(timeIndex%800===0) console.log(timeIndex)
             };
-            requestAnimationFrame(tick);
+            function addInputs(){
+                BOY.activate([1,2,3,4,5,5,90]);
+            }
+            //requestAnimationFrame(tick);
         </script>
+
         
-        <!-- <script>
+        <!-- 
+        <script>
             let CR = new CustomRandom("customseeed 85 :)_");
             const BIG_DIM = 512;
 
@@ -77,6 +98,7 @@
             const c = multiplyMatrix(a, b);
 
             console.log(c);
-        </script> -->
+        </script>
+        -->
     </body>
 </html>
