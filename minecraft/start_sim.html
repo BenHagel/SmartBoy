@@ -1,0 +1,82 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+		<script src="PseudRand.js"></script>
+        <script src="gpu-browser.min.js"></script>
+        <!-- <script src="https://unpkg.com/gpu.js@2.15.2/dist/gpu-browser.min.js"></script> -->
+		<script src="p5.min.js"></script>
+        <style>
+            body{
+                background-color: rgb(83, 106, 109);
+            }
+        </style>
+    </head>
+
+    <body id="bbb">
+        <canvas id="canvForGPUToUse"></canvas>
+        <script src="world_kernels.js"></script>
+
+        <script>
+            // Oracle control occurs here
+            var gol = new World();
+
+            // Create the Smart boy agent, std nn,
+            // Show the smart boy in 2d grid w p5js 
+            //      + its various NT and hover over for even more detailed information
+            // Show the 5-6 StdNN's values , weights of connectons for each, 
+            
+            // Create the bridge back and forther between smart boy and minecraft world.
+            // Create the various elements in the World
+            // Multiple iterations per SB step
+            // Reward and  punishment functions - top down associate signals w other stuff.
+            // 
+
+            function tick() {
+                for(let y = 0;y < 8;y++) gol.draw();   
+                frame = requestAnimationFrame(tick);
+                timeIndex++
+                if(timeIndex%800===0) console.log(timeIndex)
+            };
+            requestAnimationFrame(tick);
+        </script>
+        
+        <!-- <script>
+            let CR = new CustomRandom("customseeed 85 :)_");
+            const BIG_DIM = 512;
+
+            function makegrid(cols,rows){
+                var grid = new Array(cols);
+                for(var i =0;i<cols;i++){
+                    grid[i]=(new Array(rows)).fill(0).map(a=>Math.trunc(Math.random()));
+                }
+                return grid;
+            }
+
+
+            const gpu = new GPU();
+
+            const multiplyMatrix = gpu.createKernel(function(a, b) {
+                let sum = 0;
+                for (let i = 0; i < 512; i++) {
+                    sum += a[this.thread.y][i] * b[i][this.thread.x];
+                }
+                return sum;
+            }).setOutput([BIG_DIM, BIG_DIM]);
+
+            var inicio = gpu.createKernel(
+                function() {
+                    var val = Math.floor(Math.random()*2)
+                    this.color(val,val,val);
+                }, {useLegacyEncoder:true,output:[BIG_DIM, BIG_DIM], graphical:true}
+
+
+            );
+
+            let a = makegrid(BIG_DIM, BIG_DIM);
+            let b = makegrid(BIG_DIM, BIG_DIM);
+            const c = multiplyMatrix(a, b);
+
+            console.log(c);
+        </script> -->
+    </body>
+</html>

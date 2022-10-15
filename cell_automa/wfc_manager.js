@@ -257,7 +257,7 @@ function WFC_getTotalEntropy(WFC_2){
 }
 
 // Collapses the possible value space according to the kernel, the location, and the displacement
-function WFC_actuallyPlaceKernel(WFC_2, kern, x, y, dispX, dispY){
+function WFC_actuallyPlaceKernel(WFC_2, kSize, kern, x, y, dispX, dispY){
 
   let protectedCells = [];
 
@@ -275,10 +275,133 @@ function WFC_actuallyPlaceKernel(WFC_2, kern, x, y, dispX, dispY){
 
     }
   }
+  return protectedCells
+
+  let perimeterCells = []
+
+  for(let xi = 0;xi < kSize+2;xi++){  //xi, and yi variables just go through all effected cells that could have their pVal count changed
+    for(let yi = 0;yi < kSize+2;yi++){
+      let adjustedX = x+xi-dispX  - 1
+      adjustedX = (adjustedX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+      let adjustedY = y+yi-dispY  - 1
+      adjustedY = (adjustedY + WFC_2.output_possibility_grid[adjustedX].length) % WFC_2.output_possibility_grid[adjustedX].length
+      
+      let isProtected = false
+      for(let g = 0;g < protectedCells.length;g++){
+        if(protectedCells[g].x === adjustedX && protectedCells[g].y === adjustedY){
+            isProtected = true
+            g = protectedCells.length;
+        }
+      }
+      if(!isProtected){
+        perimeterCells.push({x:adjustedX, y: adjustedY});
+      }
+
+
+    }
+  }
 
   // Returns list of cell coordinates that were just set in stone and cannot be modified
-  return protectedCells
+  return perimeterCells
 }
+
+
+// For each of the perimeter cells , do full kernel spectrum analysis  TotalKerns(64) * kSize^2  * perimeterCells
+function WFC_loopThroughSingleCellPerimeterAroundPlacedKernels(WFC_2, kSize, perimeterCells){
+
+    // For each perimeter cell
+    for(let pc = 0;pc < perimeterCells.length;pc++){
+        let cellX = perimeterCells[pc].x
+        let cellY = perimeterCells[pc].y
+
+
+        // If there is even a chance that refinements of the entropy could be made
+        if(WFC_2.output_possibility_grid[cellX][cellY].possibleValsLeft.length > 1){
+
+            //Each index is a window's possible kernel combinations
+            let valids_collection = []
+
+            // Sliding the kernel around the perimeter always makes kSize ^ 2 iterations
+            for(let swx = 0;swx < kSize;swx++){         //slide window x
+                for(let swy = 0;swy < kSize;swy++){     // slide window y
+
+                    // List of all the valid values based on the valid kernels found
+                    // let totalValidKernelsAtThis_SlideWindow = []
+
+                    let all_allowed_vals_4_this_slideWindow = []
+
+                    // Loop through all kernels of this sliding window
+                    for(let r = 0;r < WFC_2.t1.kernels[0].ks.length;r++){
+                        let thisKern = WFC_2.t1.kernels[0].ks[r];
+                        let isKernelGood = true;
+
+                        // Loop through each spot the kernel will touch (to check if its valid)
+                        for(let xi = 0;xi < kSize;xi++){  //xi, and yi variables just go through all effected cells that could have their pVal count changed
+                            for(let yi = 0;yi < kSize;yi++){
+                                let adjustedX = cellX+xi-swx;//1
+                                adjustedX = (adjustedX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+                                let adjustedY = cellY+yi-swy;//1
+                                adjustedY = (adjustedY + WFC_2.output_possibility_grid[adjustedX].length) % WFC_2.output_possibility_grid[adjustedX].length
+
+                                //If even one value of kernel is not contained in even one of the cells, whole kernel bad
+                                if(WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft.indexOf(thisKern[xi][yi]) < 0){
+                                    isKernelGood = false;
+                                    xi = kSize;
+                                    yi = kSize;
+                                }
+                            }
+                        }
+
+                        // If this kern is good valid here, add the possibilities to their respective spots over the space of kSize^2
+                        // ^^^ (SAME LOOP AS ABOVE) ^^^ 
+                        if(isKernelGood){
+                            let valOfImportance = thisKern[swx][swy]
+                            if(all_allowed_vals_4_this_slideWindow.indexOf(valOfImportance) < 0){
+                                all_allowed_vals_4_this_slideWindow.push(valOfImportance)
+                            }
+                            //totalValidKernelsAtThis_SlideWindow.push(thisKern);
+                        }
+                    }
+
+                    valids_collection.push(all_allowed_vals_4_this_slideWindow);
+                    //valids_collection[valids_collection.length-1] = all_allowed_vals_4_this_slideWindow
+
+                    // Loop through the totalValidKernelsAtThis_SlideWindow and accumulate the valids based on slide window offset
+
+                }
+            }
+
+            //Loop through all of the valids collection and see what vals are common to all arrays
+            // console.log(valids_collection)
+            let allAllowedVals = [];
+            // Maximum # of valid possibilities will be in any of the "valids_collection" so just pick the first one
+            //because they have to be common to the other collections
+            let currentMaxValids = valids_collection[0];
+            for(let rev = 1;rev < valids_collection.length;rev++){  // moving through the rest of the colletions
+
+                for(let c = currentMaxValids.length-1;c > -1;c--){
+                    if(valids_collection[rev].indexOf(currentMaxValids[c]) < 0){
+                        currentMaxValids.splice(c, 1)
+                    }
+                }
+            }
+
+            // if(currentMaxValids.length < 1){
+            //     console.log("HAD to intervene, ", cellX, cellY)
+            //     currentMaxValids = [0]
+            // } 
+
+            WFC_2.output_possibility_grid[cellX][cellY].possibleValsLeft = currentMaxValids
+            
+
+
+        }
+    }
+
+     
+
+}
+
 
 // This updates the possible values around the last placed kernel - 
 // will need to update (kernSize+2)^2 - (kernToSize)^2 cells 
@@ -303,32 +426,32 @@ function WFC_updateThePossibleValsOfCellsAroundLastPlacedKernel(WFC_2, kSize, x,
 
         // Loop through each spot the kernel will touch (to check if its valid)
         for(let xi = 0;xi < kSize;xi++){  //xi, and yi variables just go through all effected cells that could have their pVal count changed
-          for(let yi = 0;yi < kSize;yi++){
-
-            let adjustedX = x-dispX+xi+sx - Math.floor(checkLength/2);//1   //Needs to move one left to cover perimeter
-            adjustedX = (adjustedX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
-            let adjustedY = y-dispY+yi+sy - Math.floor(checkLength/2);//1   //Needs to move one up   to cover perimeter
-            adjustedY = (adjustedY + WFC_2.output_possibility_grid[adjustedX].length) % WFC_2.output_possibility_grid[adjustedX].length
-            
-            //If even one value of kernel is not contained in even one of the cells, whole kernel bad
-            if(WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft.indexOf(thisKern[xi][yi]) < 0){
-              isKernelGood = false;
-              xi = kSize;
-              yi = kSize;
+            for(let yi = 0;yi < kSize;yi++){
+  
+              let adjustedX = x-dispX+xi+sx - Math.floor(checkLength/2);//1   //Needs to move one left to cover perimeter
+              adjustedX = (adjustedX + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length
+              let adjustedY = y-dispY+yi+sy - Math.floor(checkLength/2);//1   //Needs to move one up   to cover perimeter
+              adjustedY = (adjustedY + WFC_2.output_possibility_grid[adjustedX].length) % WFC_2.output_possibility_grid[adjustedX].length
+              
+              //If even one value of kernel is not contained in even one of the cells, whole kernel bad
+              if(WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft.indexOf(thisKern[xi][yi]) < 0){
+                isKernelGood = false;
+                xi = kSize;
+                yi = kSize;
+              }
+              // Collapse these values
+              //WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft = [kern[xi][yi]];
+        
+        
+        
             }
-            // Collapse these values
-            //WFC_2.output_possibility_grid[adjustedX][adjustedY].possibleValsLeft = [kern[xi][yi]];
-      
-      
-      
           }
-        }
-
-        // If this kern is good valid here, add the possibilities to their respective spots over the space of kSize^2
-        // ^^^ (SAME LOOP AS ABOVE) ^^^ 
-        if(isKernelGood){
-          totalValidKernelsAtThis_DispWindow.push(thisKern);
-        }
+  
+          // If this kern is good valid here, add the possibilities to their respective spots over the space of kSize^2
+          // ^^^ (SAME LOOP AS ABOVE) ^^^ 
+          if(isKernelGood){
+            totalValidKernelsAtThis_DispWindow.push(thisKern);
+          }
 
       }
 
@@ -713,6 +836,65 @@ function WFC_collapseLowestEntropyKernel(WFC_2){
 /////////////////////////  E  X  P  E  R  I  M  E  N  T  A  L
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function WFC_collapseLowestEntropyCell_JUST_ONE_CELL_THOUGH(WFC_2){
+    //Get random from the lowest possible entropy cells that aren't 1
+    let randoOffsetX = Math.floor(WFC_2.cr.random() * WFC_2.output_possibility_grid.length)
+    let randoOffsetY = Math.floor(WFC_2.cr.random() * WFC_2.output_possibility_grid[0].length)
+    let xxx = -1
+    let yyy = -1
+    let leastUncertainCell = null
+    let lowestPossibilityCountYet = 9999999
+
+    // Start at random location and grab the lowest value of possible VALUES (not kernels)
+    for(let i = 0;i < WFC_2.output_possibility_grid.length;i++){
+        let ii = (i+randoOffsetX) % WFC_2.output_possibility_grid.length;
+        for(let j = 0;j < WFC_2.output_possibility_grid[ii].length;j++){
+            let jj = (j+randoOffsetY) % WFC_2.output_possibility_grid[ii].length;
+            
+            let sus = WFC_2.output_possibility_grid[ii][jj]
+            if(sus.possibleValsLeft.length < lowestPossibilityCountYet && sus.possibleValsLeft.length > 1){
+                leastUncertainCell = sus
+                lowestPossibilityCountYet = sus.possibleValsLeft.length//where do u pick it? checkj ciollapse vlaue
+                xxx = ii
+                yyy = jj
+            }
+        }
+    }
+
+    // Found a cell that is OR is tied with having the lowest possible value count
+    if(leastUncertainCell){
+        console.log("Starting entropy: ", WFC_getTotalEntropy(WFC_2));
+        let perimeterCells = [];
+        for(let i = 0;i < 3;i++){
+            let ii = (-1 + xxx + i + WFC_2.output_possibility_grid.length) % WFC_2.output_possibility_grid.length;
+            for(let j = 0;j < 3;j++){
+                let jj = (-1 + yyy + j + WFC_2.output_possibility_grid[ii].length) % WFC_2.output_possibility_grid[ii].length
+                if(i === 1 && j === 1){
+                } else {
+                    perimeterCells.push({x: ii, y: jj})
+
+                }
+            }
+        }
+        perimeterCells = perimeterCells[Math.floor(perimeterCells.length * WFC_2.cr.random())]
+        console.log(perimeterCells)
+        WFC_2.output_possibility_grid[xxx][yyy].possibleValsLeft = [
+            WFC_2.output_possibility_grid[xxx][yyy].possibleValsLeft[
+                [Math.floor(WFC_2.cr.random()*WFC_2.output_possibility_grid[xxx][yyy].possibleValsLeft.length)]
+            ]
+        ]
+
+        WFC_loopThroughSingleCellPerimeterAroundPlacedKernels(WFC_2, WFC_2.t1.kernels[0].n, perimeterCells);
+
+        //WFC_loopThroughSingleCellPerimeterAroundPlacedKernels(WFC_2, WFC_2.t1.kernels[0].n, perimeterCells);
+        WFC_2.elapsed_steps++;
+        console.log("NEW entropy: => ", WFC_getTotalEntropy(WFC_2));
+    }
+    else{
+        console.log("no mores ecellsl sto calpsd :)")
+    }
+}
+
 
 function WFC_collapseLowestEntropyCell(WFC_2){
   //Get random from the lowest possible entropy cells that aren't 1
@@ -757,8 +939,9 @@ function WFC_collapseLowestEntropyCell(WFC_2){
 
     // Loop through all the kernels, and if you fin d
     let endedUpPlacingAKern = false;
-    console.log("======");
-    console.log("Starting entropy: ", WFC_getTotalEntropy(WFC_2));
+    // console.log("======");
+    // console.log("Starting entropy: ", WFC_getTotalEntropy(WFC_2));
+
     for(let i = 0;i < listOfKernels.length;i++){
       let ri = (i + randomStartIndex) % listOfKernels.length;
       let kernToCheck = listOfKernels[ri];
@@ -790,11 +973,14 @@ function WFC_collapseLowestEntropyCell(WFC_2){
       // If there are any valid displacement values for this kernel at all, place it - (this kernel was just picked from random distribution)
       if(leastDestructiveDispX !== -1 && leastDestructiveDispY !== -1){
         // console.log("Destruction amount:", currentDestructionValue)
-        let protectedCells = WFC_actuallyPlaceKernel(WFC_2, kernToCheck, xxx, yyy, leastDestructiveDispX, leastDestructiveDispY);
+        let protectedCells = WFC_actuallyPlaceKernel(WFC_2, kernelSize, kernToCheck, xxx, yyy, leastDestructiveDispX, leastDestructiveDispY);
         WFC_2.t1.last_kern_placed = ri;
 
+
         // TODO - Define function that loops through the perimeter cells 
-        //WFC_loopThroughSingleCellPerimeterAroundPlacedKernels
+        // WFC_loopThroughSingleCellPerimeterAroundPlacedKernels(WFC_2, kernelSize, perimeterCells);
+
+        // WFC_loopThroughSingleCellPerimeterAroundPlacedKernels(WFC_2, kernelSize, perimeterCells);
 
         // This updates the possible values around the kernel placed, so that the next round can make a more informed decision
         // as to what kernel to place
@@ -815,8 +1001,7 @@ function WFC_collapseLowestEntropyCell(WFC_2){
 
     }
 
-    if(endedUpPlacingAKern) 
-        console.log("Placed kern, new entropy:", WFC_getTotalEntropy(WFC_2));
+    //if(endedUpPlacingAKern)  console.log("Placed kern, new entropy:", WFC_getTotalEntropy(WFC_2));
 
     
     WFC_2.elapsed_steps++;

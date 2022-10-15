@@ -107,9 +107,8 @@ function propogateNewTemplateObjectWRandomSeed(){
 function stepExistingT2(WFC_2){
 
   
-
-  //let resultingAmountOfInterestingCells = WFC_collapseLowestEntropyKernel(WFC_2);
-  WFC_collapseLowestEntropyCell(WFC_2) 
+  //WFC_collapseLowestEntropyCell(WFC_2) 
+  WFC_collapseLowestEntropyCell_JUST_ONE_CELL_THOUGH(WFC_2)
 
   //Option: switch the reading of the kernels to wrapping: ON/OFF
   //For kernels that are 3x3 (nxn)
