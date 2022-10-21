@@ -4,21 +4,21 @@
 
 //const {GPU} = require('gpu.js');
 
-class SmartBoy6 {//Neuro transmitter augmentation
+class SmartBoy6 {
 
-	constructor(grid_size, seed, p5CanvsIdToUse){
-		//ID tracker for generating neurons
+	constructor(grid_size, seed, p5CanvsIdToUse) {
+		// ID tracker for generating neurons
 		this.NEURON_ID_STAMP = -1;
 
-		//Custom random
+		// Custom random
 		this.rand = new PseudRand( seed );
 
-		//Setup the mega grid
+		// Setup the mega grid
         this.grid_size = grid_size;
 		this.the_grid = new Array(grid_size);
-        for(let i = 0;i < this.the_grid.length;i++){
+        for( let i = 0; i < this.the_grid.length; i++ ){
             this.the_grid[i] = new Array(grid_size);
-            for(let j = 0;j < this.the_grid[i].length;j++){
+            for( let j = 0; j < this.the_grid[i].length; j++ ){
                 this.the_grid[i][j] = this.createAndStampNewNeuron();
             }
         }
@@ -28,36 +28,156 @@ class SmartBoy6 {//Neuro transmitter augmentation
 			"timeindex": 0,		//increases one per time step (signals take one time step to leave cellA and be received by CellB)
 			"nexts": []			//{"o": object pointer to where signal is going, "v": value of the signal}
 		};
+
+        // Boy-wide juices
+        this.boy_juices = [
+            {
+                type: 'reward',
+                val: 0.0,
+                decay: this.rand.random()*0.0499 + 0.95
+            },
+            {
+                type: 'pain',
+                val: 0.0,
+                decay: this.rand.random()*0.0499 + 0.95
+            },
+            {
+                type: 'sleepy',
+                val: 0.0,
+                decay: this.rand.random()*0.0499 + 0.95
+            }
+        ];
+
+        // Generate types of Neuron
+        this.neuron_types = new Array( 4 + Math.floor( this.rand.random() * 6 ) );
+        for(let i = 0;i < this.neuron_types.length;i++){
+            let NT = {};
+
+            NT.threshold = this.rand.random()
+
+            NT.std_juices = [
+                {
+                    type: 'potential',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                },
+                {
+                    type: 'fired',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                },
+                // Released any times
+                {
+                    type: 'deltaup10',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                },
+                {
+                    type: 'deltadown10',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                },
+                {
+                    type: 'deltaup500',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                },
+                {
+                    type: 'deltadown500',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                }
+            ];
+
+            NT.connection_juices = [
+                {
+                    type: 'receive',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                },
+                {
+                    type: 'frequencydeclining10',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                },
+                {
+                    type: 'frequencyclimbing10',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                },
+                {
+                    type: 'frequencydeclining500',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                },
+                {
+                    type: 'frequencyclimbing500',
+                    val: 0.0,
+                    decay: this.rand.random() * 0.0499 + 0.95
+                }
+            ];
+
+            // NT.processInput = createStdNn( NT.std_juices.length, this.boy_juices.length, NT.connection_juices.length );
+            //      Input strength is modified by state of neuron
+            // NT.modifyThreshold = createStdNn( NT.std_juices.length, this.boy_juices.length );
+            //      threshold modified by 25% - 300%
+            // NT.changeWeight = createStdNn( NT.std_juices.length, this.boy_juices.length, NT.connection_juices.length );
+            //      [0-1]  - 0.5  )*0.003
+            // NT.fireOutput = createStdNn( NT.std_juices.length, this.boy_juices.length );
+            //      fires a 1
+
+            this.neuron_types[i] = NT;
+        }
+
+        // P5JS canvas reference
+        this.p5Ref = null;
         
         // Set up the visuals
         if( p5CanvsIdToUse ){
             let sketch = function( p ) {
+
                 p.setup = function() {
                     p.createCanvas( 400, 400 );
                     p.background( 20, 10, 10 );
                     p.rectMode( p.CENTER );
                     p.ellipseMode( p.CENTER );
+                    p.frameRate( 24 );
                 };
+
                 p.draw = function() {
                     if( BOY ){
                         p.background( 20, 10, 10 );
-                        p.noStroke();
-                        p.fill( 120, 120, 120 );
-                        for (let i = 0; i < BOY.grid_size.length; i++) {
-                            for (let j = 0; j < BOY.grid_size[i].length; j++) {
-                                p.rect(i * 8, j * 8, 6, 6);
+
+                        for (let i = 0; i < BOY.the_grid.length; i++) {
+                            for (let j = 0; j < BOY.the_grid[i].length; j++) {
+                                p.drawSingleGridUnit(BOY.the_grid[i][j], i, j);
                             }
                         }
+
+                    } else {
+                        console.log('errrr ---------------no boy!');
                     }
                 };
+
+                p.drawSingleGridUnit = function(gu, xx, yy) {
+
+                    
+                    p.noStroke();
+                    p.fill( 120, 120, 120 );
+
+                    p.push();
+                    p.translate(40, 40);
+                    p.rect(xx * 8, yy * 8, 6, 6);
+                    p.pop();
+                };
             };
-            new p5( sketch, p5CanvsIdToUse );
+            this.p5Ref = new p5( sketch, p5CanvsIdToUse );
         }
 	}
 
-    createAndStampNewNeuron(){
-        this.NEURON_ID_STAMP++;
-        let n = new Neuron();
+    createAndStampNewNeuron() {
+        this.NEURON_ID_STAMP ++;
+        let n = new Neuron( this );
         n.id = this.NEURON_ID_STAMP;
         return n;
     }
@@ -70,10 +190,8 @@ class SmartBoy6 {//Neuro transmitter augmentation
 
 	// By default just stimulates the first neurons it finds to its connections
 	activate(inputs){
-        console.log( 'inputs', inputs )
 		for(let b = 0;b < inputs.length;b++){
             let neu = this.getN(b);
-            console.log('stimulating', neu.id, 'with', inputs[b])
 			//If the stimulatio nis 0, dont bother the outputs of this neuron, so don't stimulate...
 			if(inputs[b] > 0){
 				Neuron.Neuron_stimulate( this.oracle.nexts, neu, inputs[b] );
@@ -87,22 +205,21 @@ class SmartBoy6 {//Neuro transmitter augmentation
 		let newDischarge = 0.0;
 		let neuronsCheckedSoFar = [];
 
-		while(this.oracle.nexts.length > 0){
+        // Sum up the signals and track which neurons are to be checked
+		while ( this.oracle.nexts.length > 0 ){
 			let signal = this.oracle.nexts.shift();
 			let neu = signal.o;
 
-			if(neuronsCheckedSoFar.indexOf(neu) === -1){
-				neuronsCheckedSoFar.push(neu);
-			}
-			else{
+			if ( neuronsCheckedSoFar.indexOf( neu ) === -1 ) {
+				neuronsCheckedSoFar.push( neu );
 			}
 			
 			//Add the val of this signal to the potential
-			var getWeight = function(nnn, neufrom){
-				for(let i = 0;i < nnn.incoming.length;i++) 
+			var getWeight = function( nnn, neufrom ) {
+				for( let i = 0; i < nnn.incoming.length; i++ ) 
 					if(nnn.incoming[i].n === neufrom) return nnn.incoming[i];
 			};
-			let ww = getWeight(neu, signal.f);
+			let ww = getWeight( neu, signal.f );
 			neu.potential += ww.w * signal.v;
 		}
 
@@ -122,16 +239,17 @@ class SmartBoy6 {//Neuro transmitter augmentation
 				//Send nexts out
 				for(let i = 0;i < neuronsCheckedSoFar[k].outgoing.length;i++){
 					let valToAdd = {
-						"f": neuronsCheckedSoFar[k],
-						"o": neuronsCheckedSoFar[k].outgoing[i].n,
-						"v": neuronsCheckedSoFar[k].output
+                        // from
+						f: neuronsCheckedSoFar[k],
+                        // to
+						o: neuronsCheckedSoFar[k].outgoing[i].n,
+                        // value
+						v: neuronsCheckedSoFar[k].output
 					};
 					this.oracle.nexts.push(valToAdd);
 					newDischarge += valToAdd.v;
 				}
-			}
-			//Neuron cannot fire!
-			else{
+			} else {
 
 			}
 		}
@@ -197,16 +315,16 @@ class SmartBoy6 {//Neuro transmitter augmentation
 }
 
 class Neuron {
-    constructor(theNeuronDefaultDiam){
+    constructor(boyref){
         this.id = -1;
 
+        this.boy = boyref;
         this.bias = 0;//OVERLORD_RAND.random()*2 - 1;
     
         //For recurrence 
-        this.potential = 0.0;
         this.threshold = 0.0;//Gets overriden on creation
-        this.momentum = 0.0;//momentum (maybe needs to get reset at tf reset)
         this.timesfired = 0;
+        this.lastfired = 0;
     
         //Connections
         this.incoming = [];
@@ -216,13 +334,30 @@ class Neuron {
         this._output = 0.0;
         this.error = 0.0;
         this._error = 0.0;
-    
-        //Graphix variables
-        this.p5_x = 0;
-        this.p5_y = 0;
-        this.p5_diam = theNeuronDefaultDiam;// p5_neuronDefaultDiam;
-        this.p5_hover = 0.0;
-        this.p5_type = 0;//0 = input, 1 = hidden, 2 = output
+
+        // Cell wide juice
+        this.Juice = [
+            {
+                type: 'potential',
+                val: 0.0
+            },
+            {
+                type: 'fired',
+                val: 0.0
+            },
+            {
+                type: 'deltaup',
+                val: 0.0
+            },
+            {
+                type: 'deltadown',
+                val: 0.0
+            },
+
+        ];
+
+        this.
+
     }
 
     //TODO , dont let recurrent connections occur
@@ -245,7 +380,6 @@ class Neuron {
         //Succees test, make weight
         //if(!weight){console.log("ERR", "NEED A WEIGHT");process.exit(1);}
         let w = weight == undefined ? OVERLORD_RAND.random() : weight;
-        let tt = tipe ? tipe : 0;//0=normal neural connection,
         neu_from.outgoing.push({
             "n": neu_to
         });
@@ -253,14 +387,7 @@ class Neuron {
         neu_to.incoming.push({
             "n": neu_from,
             "w": w,
-            "m": 0.0,
-            "t": tt,	//type of weight connection not sure what this is for yet
-                "r": Math.floor(OVERLORD_RAND.random()*225) + 30,
-                "g": Math.floor(OVERLORD_RAND.random()*225) + 30,
-                "b": Math.floor(OVERLORD_RAND.random()*225) + 30,
-            //Makes the arrow point to a cloud around the receiving neuron
-            "p5_offsetx": Math.cos(anglee) * ((neu_to.p5_diam/2)*1.2),
-            "p5_offsety": Math.sin(anglee) * ((neu_to.p5_diam/2)*1.2),
+            "m": 0.0
         });
     }
 

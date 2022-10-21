@@ -1,0 +1,58 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+		<script src="PseudRand.js"></script>
+		<script src="p5.min.js"></script>
+		<script src="load.js"></script>
+		<script src="whiteboard_logic.js"></script>
+        <style>
+            body{
+                background-color: rgb( 83, 106, 109 );
+            }
+            #p5BoyCanvas{
+                border: 5px solid black;
+                max-width: 450px;
+            }
+            .hidden{
+                transition: all 1s ease-in-out !important;
+                opacity:0;
+                max-height:0;
+                max-width:0;
+                display:none;
+                padding:0 !important;
+                margin:0 !important;
+                border:none !important;
+                overflow:hidden;
+            }
+            .disable-selectt {
+                user-select: none; /* supported by Chrome and Opera */
+                -webkit-user-select: none; /* Safari */
+                -khtml-user-select: none; /* Konqueror HTML */
+                -moz-user-select: none; /* Firefox */
+                -ms-user-select: none; /* Internet Explorer/Edge */
+                -webkit-user-drag: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!--TODO list-->
+        <div class="hidden">
+
+        </div>
+
+
+        <canvas id="canvForGPUToUse"></canvas>
+        <div id="p5BoyCanvas">
+            <p>Boys Brain:</p>
+            <button onclick="addInputs()">Test Add Buttons</button>
+        </div>
+
+        <script>
+            // Whiteboard
+            var WB = new WhiteBoard();
+            
+            //requestAnimationFrame(tick);
+        </script>
+    </body>
+</html>

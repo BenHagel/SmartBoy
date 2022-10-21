@@ -17,10 +17,74 @@
                 border: 5px solid black;
                 max-width: 450px;
             }
+            .hidden{
+                transition: all 1s ease-in-out !important;
+                opacity:0;
+                max-height:0;
+                max-width:0;
+                display:none;
+                padding:0 !important;
+                margin:0 !important;
+                border:none !important;
+                overflow:hidden;
+            }
+            .disable-selectt {
+                user-select: none; /* supported by Chrome and Opera */
+                -webkit-user-select: none; /* Safari */
+                -khtml-user-select: none; /* Konqueror HTML */
+                -moz-user-select: none; /* Firefox */
+                -ms-user-select: none; /* Internet Explorer/Edge */
+                -webkit-user-drag: none;
+            }
         </style>
     </head>
 
     <body>
+        <!--TODO list-->
+        <div class="hidden">
+            Distributed computation.
+
+            It's clear that whatever is the prime mover of intelligence inside the HUMAN brain
+            comes from the interaction of similarly parametered compute units (NEURONS).
+
+            The problem arrises from defining the interactions that require those parameters,
+            And then finding the parameters through optimizing a fitness score in an environment.
+
+            Because the whole puprose is maximizing the interactions between these cells
+
+
+            
+
+            The current GLOBAL_SEED determines the SHARED_ENVIRONMENT_STATE based on the ENVIRONMENT_RULES.
+
+            ENVIRONMENT_RULES
+
+
+            Example:
+            A 2d world of simple square, soft bounce collisions.
+            global_seed determines how these particles can interact with each other.
+            The environment_rules can 
+
+            Question: what is the domain of things to solve?
+
+            Solve a GPU-computable field of processing units
+
+            There need to be a huge amount of them, and they need to be communicating with each other
+
+            Super streamlined battle mechanics - RTS 
+            nice physics based 3D on a 2D plane over world - classical battle stage engagenemnts
+            Battle screen - your half, their half- in a fast generated world map:: place ur inventory where you want
+            to stratetgiceally defend your army
+
+            spring based baddies? still in 2d con
+
+            place locatiopn and starting velocity!
+             quick way to get into scenarios where physcis and emrgent phenomoone occur :
+                : ships triyng to aviod each other + attack the enemy: ransack
+
+        </div>
+
+
         <canvas id="canvForGPUToUse"></canvas>
         <div id="p5BoyCanvas">
             <p>Boys Brain:</p>
@@ -35,9 +99,8 @@
 
             const randBoySeed = Math.floor( Math.random() * 300300500 );
             console.log( 'Rand boy seed:', randBoySeed );
-            let b = new SmartBoy6( 16, randBoySeed, document.getElementById('p5BoyCanvas'));
+            var BOY = new SmartBoy6( 16, randBoySeed, document.getElementById('p5BoyCanvas'));
 
-            var BOY = b;
             // Create the Smart boy agent, std nn,
             // Show the smart boy in 2d grid w p5js 
             //      + its various NT and hover over for even more detailed information
@@ -49,13 +112,15 @@
             // Reward and  punishment functions - top down associate signals w other stuff.
             // 
 
+            
+            function addInputs(){
+                BOY.activate([1,2,3,4,5,5,8]);
+                BOY.step();
+            }
             function tick() {
                 for(let y = 0;y < 1;y++) WORLD.draw();   
                 frame = requestAnimationFrame(tick);
             };
-            function addInputs(){
-                BOY.activate([1,2,3,4,5,5,90]);
-            }
             //requestAnimationFrame(tick);
         </script>
 

@@ -13,12 +13,14 @@ class World {
 
         this.timeIndex = 0;
 
+        this.rand = new PseudRand( seed );
+
         this.inicio = gpu.createKernel(
             function() {
-                var val = Math.trunc(Math.random()*2)
-                this.color(val,val,val);
+                var val = Math.trunc( Math.random() * 2 );
+                this.color( val, val, val );
             },
-            {useLegacyEncoder:true,output:[dim, dim],graphical:true}
+            { useLegacyEncoder:true, output: [dim, dim], graphical: true }
         );
 
 
