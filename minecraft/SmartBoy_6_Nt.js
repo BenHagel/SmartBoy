@@ -6,16 +6,17 @@
 
 class SmartBoy6 {
 
-	constructor(grid_size, seed, p5CanvsIdToUse) {
+	constructor( grid_size, seed, p5CanvsIdToUse ) {
 		// ID tracker for generating neurons
 		this.NEURON_ID_STAMP = -1;
 
 		// Custom random
+        this.seed = seed;
 		this.rand = new PseudRand( seed );
 
 		// Setup the mega grid
         this.grid_size = grid_size;
-		this.the_grid = new Array(grid_size);
+		this.the_grid = new Array( grid_size );
         for( let i = 0; i < this.the_grid.length; i++ ){
             this.the_grid[i] = new Array(grid_size);
             for( let j = 0; j < this.the_grid[i].length; j++ ){
@@ -30,92 +31,87 @@ class SmartBoy6 {
 		};
 
         // Boy-wide juices
-        this.boy_juices = [
-            {
-                type: 'reward',
+        this.boy_juices = {
+            reward: {
                 val: 0.0,
-                decay: this.rand.random()*0.0499 + 0.95
+                decay: this.rand.random() * 0.0499 + 0.95
             },
-            {
-                type: 'pain',
+            pain: {
                 val: 0.0,
-                decay: this.rand.random()*0.0499 + 0.95
+                decay: this.rand.random() * 0.0499 + 0.95
             },
-            {
-                type: 'sleepy',
+            sleepy: {
                 val: 0.0,
-                decay: this.rand.random()*0.0499 + 0.95
+                decay: this.rand.random() * 0.0499 + 0.95
             }
-        ];
+        };
 
         // Generate types of Neuron
         this.neuron_types = new Array( 4 + Math.floor( this.rand.random() * 6 ) );
+        // Global juice modifier 
+        let GJ = 0.04;
         for(let i = 0;i < this.neuron_types.length;i++){
             let NT = {};
 
-            NT.threshold = this.rand.random()
-
-            NT.std_juices = [
-                {
-                    type: 'potential',
-                    val: 0.0,
+            NT.threshold = this.rand.random();
+            NT.potential = this.rand.random();
+            
+            // Neuron wide jusices
+            NT.std_juices = {
+                // Release on just fired
+                discharge: {
+                    val: GJ,
                     decay: this.rand.random() * 0.0499 + 0.95
                 },
-                {
-                    type: 'fired',
-                    val: 0.0,
+                attention_up_100: {
+                    val: GJ,
                     decay: this.rand.random() * 0.0499 + 0.95
                 },
-                // Released any times
-                {
-                    type: 'deltaup10',
-                    val: 0.0,
-                    decay: this.rand.random() * 0.0499 + 0.95
-                },
-                {
-                    type: 'deltadown10',
-                    val: 0.0,
-                    decay: this.rand.random() * 0.0499 + 0.95
-                },
-                {
-                    type: 'deltaup500',
-                    val: 0.0,
-                    decay: this.rand.random() * 0.0499 + 0.95
-                },
-                {
-                    type: 'deltadown500',
-                    val: 0.0,
+                attention_down_100: {
+                    val: GJ,
                     decay: this.rand.random() * 0.0499 + 0.95
                 }
-            ];
+            };
+            NT.std_juices_keys = Object.keys( NT.std_juices );
 
-            NT.connection_juices = [
-                {
-                    type: 'receive',
-                    val: 0.0,
+            // Connections that are specific  to a connection
+            NT.connection_juices = {
+                // Released if it was the deciding factor
+                direct_discharge: {
+                    val: GJ,
                     decay: this.rand.random() * 0.0499 + 0.95
                 },
-                {
-                    type: 'frequencydeclining10',
-                    val: 0.0,
-                    decay: this.rand.random() * 0.0499 + 0.95
-                },
-                {
-                    type: 'frequencyclimbing10',
-                    val: 0.0,
-                    decay: this.rand.random() * 0.0499 + 0.95
-                },
-                {
-                    type: 'frequencydeclining500',
-                    val: 0.0,
-                    decay: this.rand.random() * 0.0499 + 0.95
-                },
-                {
-                    type: 'frequencyclimbing500',
-                    val: 0.0,
+                // Encouragement juice exagerates the weights to the positive or negative sides
+                encouragement_juice: {
+                    val: GJ,
                     decay: this.rand.random() * 0.0499 + 0.95
                 }
-            ];
+            };
+            
+            NT.connection_juices_keys = Object.keys( NT.connection_juices );
+
+
+            // Create std input
+            NT.inputStdNn = new StdNn( [
+                NT.std_juices_keys.length +
+                NT.connection_juices_keys.length +
+                1,
+                1
+            ], this.seed + Math.floor( i * 10 + 66));
+            NT.processInput = () => {
+                return NT.inputStdNn.activate( arguments );
+            };
+
+
+            NT.modifyStdNn = new StdNn( [
+                NT.std_juices_keys.length +
+                NT.connection_juices_keys.length +
+                1,
+                1
+            ], this.seed + Math.floor( i * 80 + 88));
+            NT.modifyThreshold = () => {
+                return NT.modifyStdNn.activate( arguments );
+            };
 
             // NT.processInput = createStdNn( NT.std_juices.length, this.boy_juices.length, NT.connection_juices.length );
             //      Input strength is modified by state of neuron
@@ -223,7 +219,7 @@ class SmartBoy6 {
 			neu.potential += ww.w * signal.v;
 		}
 
-		//While there are neurons to fire?
+		// While there are neurons to fire?
 		for(let k = 0;k < neuronsCheckedSoFar.length;k++){
 			if(neuronsCheckedSoFar[k].potential + neuronsCheckedSoFar[k].bias > neuronsCheckedSoFar[k].threshold){
 				let spillage = neuronsCheckedSoFar[k].potential - neuronsCheckedSoFar[k].threshold;//TODO <- this could mean something
@@ -271,7 +267,7 @@ class SmartBoy6 {
 
 
 	// literally shuffles an array
-	static shuffler(array) {
+	static shuffler( array ) {
 		let currentIndex = array.length,  randomIndex;
 
 		// While there remain elements to shuffle...
@@ -291,7 +287,7 @@ class SmartBoy6 {
 
 
 	//Utility functions
-	static new_clearOutGoingHiddenConnections(boyy){
+	static new_clearOutGoingHiddenConnections( boyy ){
 		for(let yy = 0; yy < 3;yy++){
 			for(let i = 0;i < boyy.layers[yy].length;i++){
 				boyy.layers[yy][i].outgoing = [];
@@ -299,7 +295,7 @@ class SmartBoy6 {
 			}
 		}
 	}
-	static new_recalWeightArrows(boyy){
+	static new_recalWeightArrows( boyy ){
 		for(let i = 0;i < boyy.all_neurons.length;i++){
 			let n = boyy.all_neurons[i];
 			for(let j = 0;j < n.incoming.length;j++){
@@ -315,7 +311,7 @@ class SmartBoy6 {
 }
 
 class Neuron {
-    constructor(boyref){
+    constructor( boyref ){
         this.id = -1;
 
         this.boy = boyref;
@@ -336,32 +332,16 @@ class Neuron {
         this._error = 0.0;
 
         // Cell wide juice
-        this.Juice = [
-            {
-                type: 'potential',
-                val: 0.0
-            },
-            {
-                type: 'fired',
-                val: 0.0
-            },
-            {
-                type: 'deltaup',
-                val: 0.0
-            },
-            {
-                type: 'deltadown',
-                val: 0.0
-            },
+        this.ct = -1;//Cell Type
 
-        ];
+    }
 
-        this.
+    static Neuron_instantiate( neu , neuronType){
 
     }
 
     //TODO , dont let recurrent connections occur
-    static Neuron_connect(neu_from, neu_to, weight, tipe){
+    static Neuron_connect( neu_from, neu_to, weight, tipe ){
         let doesThisConnectionMakeADirectRecurssion = -1;
         //Check if there exists the neu_to's input in your own incomings
         /*for(let h = 0;h < neu_from.incoming.length;h++){
@@ -387,11 +367,13 @@ class Neuron {
         neu_to.incoming.push({
             "n": neu_from,
             "w": w,
-            "m": 0.0
+            "m": 0.0,
+            "lr": 0,//last pulse received
+            "cr": 0//connection ratio 
         });
     }
 
-    static Neuron_stimulate(nxts, neu, inp){
+    static Neuron_stimulate( nxts, neu, inp ){
         neu.timesfired++;
         neu.output = inp;
         for(let i = 0;i < neu.outgoing.length;i++){

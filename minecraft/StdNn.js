@@ -1,6 +1,6 @@
 function StdNn(puzzle, custom_seed){
 	//Custom random
-	this.cr = new CustomRandom("legatus salt" + (custom_seed?custom_seed:""), CHelper__B.hasher_256);
+	this.cr = new PseudRand(custom_seed)
 	this.tv_1 = 0;//custom variables for statistical analysis
 	this.tv_2 = 0;
 
@@ -8,7 +8,7 @@ function StdNn(puzzle, custom_seed){
 	for(let g = 0;g < 10;g++){
 		st += "," + this.cr.random();
 	}
-	//console.log(st);
+
 	//Needed?
 	//this.input_bias = new Array(puzzle.neural_structure[0]);
 	//for(let ff = 0;ff < this.input_bias.length;ff++) this.input_bias[ff] = 0.1 + 0.9*this.cr.random_pre();
@@ -25,32 +25,32 @@ function StdNn(puzzle, custom_seed){
 	this.iter = 0;
 	
 	//Perceptron scaffolding
-	this.layers = new Array(puzzle.layers.length-1);	//all the weights
-	this.layers_c = new Array(puzzle.layers.length-1);	//all the weights - delta
-	this.bias = new Array(puzzle.layers.length-1);		//just the one bias per neuron
-	this.bias_c = new Array(puzzle.layers.length-1);	//just the one bias per neuron - delta
-	this.outs = new Array(puzzle.layers.length-1);		//just the one output per neuron
-	this.errs = new Array(puzzle.layers.length-1);		//just the one error per neuron
-	this.nets = new Array(puzzle.layers.length-1);		//just the one net intake per neuron
+	this.layers = new Array(puzzle.length-1);	//all the weights
+	this.layers_c = new Array(puzzle.length-1);	//all the weights - delta
+	this.bias = new Array(puzzle.length-1);		//just the one bias per neuron
+	this.bias_c = new Array(puzzle.length-1);	//just the one bias per neuron - delta
+	this.outs = new Array(puzzle.length-1);		//just the one output per neuron
+	this.errs = new Array(puzzle.length-1);		//just the one error per neuron
+	this.nets = new Array(puzzle.length-1);		//just the one net intake per neuron
 	this.param_count = 0;
 	this.lastInput = [];
 	
 	let bb = 0;
-	for(let i = puzzle.layers.length-1;i > 0;i--){
+	for(let i = puzzle.length-1;i > 0;i--){
 		//Neurons in the layer
-		let neuronss = new Array(puzzle.layers[i]);
-		let neuronss_c = new Array(puzzle.layers[i]);
-		let biass = new Array(puzzle.layers[i]);
-		let biass_c = new Array(puzzle.layers[i]);
-		let outss = new Array(puzzle.layers[i]);
-		let errss = new Array(puzzle.layers[i]);
-		let netss = new Array(puzzle.layers[i]);
+		let neuronss = new Array(puzzle[i]);
+		let neuronss_c = new Array(puzzle[i]);
+		let biass = new Array(puzzle[i]);
+		let biass_c = new Array(puzzle[i]);
+		let outss = new Array(puzzle[i]);
+		let errss = new Array(puzzle[i]);
+		let netss = new Array(puzzle[i]);
 		
 		//Make weights of size of previous layer
 		for(let j = 0;j < neuronss.length;j++){
 
-			let wts = new Array(puzzle.layers[i-1]);
-			let wts_c = new Array(puzzle.layers[i-1]);
+			let wts = new Array(puzzle[i-1]);
+			let wts_c = new Array(puzzle[i-1]);
 
 			for(let k = 0;k < wts.length;k++){
 				wts[k] = (this.cr.random()*2-1) * this.std_signal_boost;

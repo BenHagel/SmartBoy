@@ -50,12 +50,22 @@
             The problem arrises from defining the interactions that require those parameters,
             And then finding the parameters through optimizing a fitness score in an environment.
 
-            Because the whole puprose is maximizing the interactions between these cells
+            Because the whole puprose of this exercise would be to hone in on the values.
+
+            Need to define: what the numbers define, and then what the numbers are.
+
+            Things that must be possible in the domain of possibilities:
+                Hebbian firing together and wiring together.
+                Global hormone cycles included in each 
+
+            Possible function points for a cell and when they're called:
+                Receiving a signalx
 
 
             
 
-            The current GLOBAL_SEED determines the SHARED_ENVIRONMENT_STATE based on the ENVIRONMENT_RULES.
+            The current GLOBAL_SEED determines the SHARED_ENVIRONMENT_STATE based
+            on the ENVIRONMENT_RULES.
 
             ENVIRONMENT_RULES
 
@@ -110,7 +120,19 @@
             // Create the various elements in the World
             // Multiple iterations per SB step
             // Reward and  punishment functions - top down associate signals w other stuff.
-            // 
+            
+            let avgs = [];
+            let insize = 6;
+            let nn = new StdNn( [insize, 1], 152398237 + Math.floor(23191233 * Math.random()) );
+            for(let u = 0;u < 10;u++){
+                let kks = new Array(insize);for(let o=0;o<kks.length;o++) kks[o] = Math.random();
+                let out = nn.activate(kks)
+                //avgs.push(out[0])
+                console.log(out);
+            }
+
+            // let av = avgs.reduce((a, b) => a + b, 0) / avgs.length;
+            // console.log('av', av);
 
             
             function addInputs(){
