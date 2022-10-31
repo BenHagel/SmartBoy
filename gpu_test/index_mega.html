@@ -1,0 +1,233 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="gpu-browser.min.js"></script>
+        <!-- <script src="https://unpkg.com/gpu.js@2.15.2/dist/gpu-browser.min.js"></script> -->
+
+        <script type="text/javascript" src="bundle.js"></script>
+		<script src="p5.min.js"></script>
+		<!--<script src="server/p5.dom.min.js"></script>-->
+		<!--<script src="https://cdn.jsdelivr.net/npm/p5@0.10.2/lib/p5.js"></script>-->
+		<script src="CustomRandom.js"></script>
+        <style>
+            body{
+                background-color: rgb(83, 106, 109);
+            }
+        </style>
+    </head>
+
+    <body id="bbb">
+        <canvas id="cccc"></canvas>
+        <script>
+            var width=512;
+            var height=512
+            var radius=10;
+            var context_canvas = document.getElementById("cccc");
+            let frame;
+
+            var timeIndex = 0
+            
+            class Gameoflife {
+                constructor() {
+                    const gpu = new GPU({
+                        canvas: context_canvas,
+                        mode: 'gpu'
+                    });
+
+                    const dim = 512;
+
+                    this.inicio = gpu.createKernel(
+                        function() {
+                            var val = Math.trunc( Math.random() * 2 )
+                            this.color( val, val, val );
+                        }, { 
+                            useLegacyEncoder: true, 
+                            output: [dim, dim], 
+                            graphical: true
+                        }
+                    );
+
+                    // const megaKernel = gpu.createKernelMap({
+                    //     addResult: function add(a, b) {
+                    //         return a + b;
+                    //     },
+                    //     multiplyResult: function multiply(a, b) {
+                    //         return a * b;
+                    //     },
+                    // }, function(a, b, c) {
+                    //     return multiply(add(a[this.thread.x], b[this.thread.x]), c[this.thread.x]);
+                    // }, { output: [10] });
+
+                    // megaKernel(a, b, c);
+                    // // Result: { addResult: Float32Array, multiplyResult: Float32Array, result: Float32Array }
+
+                    
+
+                    //megaKernel(a, b, c);
+                    // Result: { 0: Float32Array, 1: Float32Array, result: Float32Array }
+
+
+                    this.kernelDrawPart = gpu.createKernel(
+                        function( m ) {
+                            var s = 512;
+                            var sum = 0;
+                            var h = this.thread.x;
+                            var k =  s - 1 - this.thread.y;
+                            var index = h*4 + k*4*s;
+                            var status = m[index] != 0 ? 1 : 0;
+
+                            for( var j =- 1;j <= 1; j++ ){
+                                for( var i =- 1;i <= 1; i++ ){
+                                    var x = (h+i+s) % s;
+                                    var y = (k+j+s) % s;
+                                    sum += m[x*4 + y*4*s] != 0 ? 1 : 0;
+                                }
+                            }
+
+                            sum -= status;
+                            var val = 0;
+                            var potionGradient = 0;//p[this.thread.x][this.thread.y];
+                            if( status == 1 && (sum == 3 || sum == 2) ){
+                                val = 1;
+                                potionGradient = 1;
+                            }
+                            if( status == 1 && ((sum < 2) || ( sum > 3)) ){
+                                val = 0;
+                                potionGradient = 0;
+                            }
+                            if( status == 0 && sum == 3 ){
+                                val = 1;
+                                potionGradient = 1;
+                            }
+                            //p[this.thread.x][this.thread.y] = potionGradient;
+                            this.color( val, 0.5, 0.5 );
+
+                        }, {
+                            immutable: true,
+                            useLegacyEncoder: true,
+                            output: [dim, dim],
+                            graphical: true
+                        }
+                    );
+
+                    this.potionsDown = gpu.createKernel(
+                        function( m ) {
+                            var h = this.thread.x;
+                            var k = this.thread.y;
+                            m[h][k] *= 0.99
+                        }, {
+                            immutable: true,
+                            useLegacyEncoder: true,
+                            output: [dim, dim],
+                            graphical: false
+                        }
+                    );
+
+                    this.cols = dim;
+                    this.rows = dim;
+                    this.grid = this.makegrid( this.cols, this.rows );
+                    this.newgrid = this.makeemptygrid( this.cols, this.rows );
+
+                    this.inicio();
+                    this.pixels = this.inicio.getPixels();
+                    this.potions = this.makegrid_std();
+                }
+
+                next(){
+                    this.potionsDown( this.potions );//degrade potions
+                    this.kernelDrawPart( this.pixels );
+
+                    this.pixels = this.kernel.getPixels();
+                }
+
+                draw(){
+                    this.next();
+                }
+
+                makeemptygrid(cols,rows){
+                    var grid = new Array(cols);
+                    for(var i = 0;i < cols;i++ ){
+                        grid[i] = (new Array(rows)).fill(0);
+                    }
+                    return grid;
+                }
+
+                makegrid_std(cols, rows) {
+                    var grid = new Array(cols);
+                    for( var i = 0;i < cols;i++ ){
+                        grid[ i ] = ( new Array( rows )).fill( 0 ).map( a => Math.random() );
+                    }
+                    return grid;
+                }
+
+                makegrid(cols,rows){
+                    var grid = new Array(cols);
+                    for( var i = 0;i < cols;i++ ){
+                        grid[ i ] = ( new Array( rows )).fill( 0 ).map( a => Math.trunc( Math.random() * 2 ) );
+                    }
+                    return grid;
+                }
+            }
+                
+            var gol = new Gameoflife();
+
+            function tick() {
+                if( timeIndex < 1000 ){
+                    timeIndex++;
+                    if(timeIndex % 10===0){
+                        for(let y = 0;y < 1;y++){
+                            gol.draw();
+                        }
+                    }
+                    frame = requestAnimationFrame(tick);
+                    if(timeIndex % 100===0){
+                        console.log(timeIndex)
+                    }
+                } else {
+                    console.log("done!");
+                }
+            };
+            requestAnimationFrame( tick );
+            
+        </script>
+        
+        <!-- <script>
+            let CR = new CustomRandom("customseeed 85 :)_");
+            const BIG_DIM = 512;
+
+            function makegrid(cols,rows){
+                var grid = new Array(cols);
+                for(var i =0;i<cols;i++){
+                    grid[i]=(new Array(rows)).fill(0).map(a=>Math.trunc(Math.random()));
+                }
+                return grid;
+            }
+
+
+            const gpu = new GPU();
+
+            const multiplyMatrix = gpu.createKernel(function(a, b) {
+                let sum = 0;
+                for (let i = 0; i < 512; i++) {
+                    sum += a[this.thread.y][i] * b[i][this.thread.x];
+                }
+                return sum;
+            }).setOutput([BIG_DIM, BIG_DIM]);
+
+            var inicio = gpu.createKernel(
+                function() {
+                    var val = Math.floor(Math.random()*2)
+                    this.color(val,val,val);
+                }, {useLegacyEncoder:true,output:[BIG_DIM, BIG_DIM], graphical:true}
+
+
+            );
+
+            let a = makegrid(BIG_DIM, BIG_DIM);
+            let b = makegrid(BIG_DIM, BIG_DIM);
+            const c = multiplyMatrix(a, b);
+
+            console.log(c);
+        </script> -->
+    </body>
+</html>

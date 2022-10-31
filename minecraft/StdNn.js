@@ -81,6 +81,10 @@ function StdNn(puzzle, custom_seed){
 	this.param_count = bb;
 
 	this.activate = (ins) => {
+
+        // Map the 0-1 to -1 to 1
+        for(let b = 0;b < ins.length;b++) ins[b] = -1 + ins[b]*2
+
 		//Record most recent input
 		let newActivation = new Array(ins.length);
 		for(let hh = 0;hh < newActivation.length;hh++) 

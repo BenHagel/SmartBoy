@@ -8,6 +8,7 @@
         <script src="StdNn.js"></script>
         <script src="world_kernels.js"></script>
         <script src="SmartBoy_6_Nt.js"></script>
+        <script src="SmartBoy_7_Ca.js"></script>
 
         <style>
             body{
@@ -98,7 +99,8 @@
         <canvas id="canvForGPUToUse"></canvas>
         <div id="p5BoyCanvas">
             <p>Boys Brain:</p>
-            <button onclick="addInputs()">Test Add Buttons</button>
+            <button onclick="addInputs()">Step</button>
+            <button onclick="moveDiagonally()">StepPULSE</button>
         </div>
 
         <script>
@@ -109,8 +111,12 @@
 
             const randBoySeed = Math.floor( Math.random() * 300300500 );
             console.log( 'Rand boy seed:', randBoySeed );
-            var BOY = new SmartBoy6( 16, randBoySeed, document.getElementById('p5BoyCanvas'));
+            // Create new boy with 16 pixels across
+            // var BOY = new SmartBoy6( 16, randBoySeed, document.getElementById('p5BoyCanvas'));
+            var BOY = new SmartBoy7( 16, randBoySeed, document.getElementById('p5BoyCanvas') );
 
+
+            // Old plan
             // Create the Smart boy agent, std nn,
             // Show the smart boy in 2d grid w p5js 
             //      + its various NT and hover over for even more detailed information
@@ -121,24 +127,53 @@
             // Multiple iterations per SB step
             // Reward and  punishment functions - top down associate signals w other stuff.
             
-            let avgs = [];
-            let insize = 6;
-            let nn = new StdNn( [insize, 1], 152398237 + Math.floor(23191233 * Math.random()) );
-            for(let u = 0;u < 10;u++){
-                let kks = new Array(insize);for(let o=0;o<kks.length;o++) kks[o] = Math.random();
-                let out = nn.activate(kks)
-                //avgs.push(out[0])
-                console.log(out);
-            }
+            // New plan
 
-            // let av = avgs.reduce((a, b) => a + b, 0) / avgs.length;
-            // console.log('av', av);
+            
+            // let avgs = [];
+            // var insize = 7;
+            // let nn = new StdNn( 
+            //     [insize, 4], 
+            //     152398237 + Math.floor(23191233 * Math.random()) 
+            // );
+
+            // // The 0 case
+            // let kks = new Array(insize); for(let o=0;o<kks.length;o++) kks[o] = 0;
+            // let out = nn.activate(kks);
+            // // avgs.push(out[0])
+            // console.log(out);
+
+            // // The 1 case
+            // for(let o=0;o<kks.length;o++) kks[o] = 1;
+            // out = nn.activate(kks);
+            // // avgs.push(out[0])
+            // console.log(out);
+
+            // //Randoms
+            // console.log('rr-r-r-r-r-r-r-r-r-r-r-r-r-random')
+            // for(let u = 0;u < 10;u++){
+            //     let kks = new Array(insize); for(let o=0;o<kks.length;o++) kks[o] = Math.random();
+            //     let out = nn.activate(kks);
+            //     // avgs.push(out[0])
+            //     console.log(out);
+            // }
+
 
             
             function addInputs(){
-                BOY.activate([1,2,3,4,5,5,8]);
-                BOY.step();
+                // For SmartBoy 6 inputs
+                //BOY.activate([1,2,3,4,5,5,8]);
+                //BOY.step();
+
+                // For SmartBoy 7 inputs
+                BOY.step()
+
             }
+
+            function moveDiagonally(){
+                BOY.pulseStep(1, [1, 1, 1, 1, 1] );
+            }
+
             function tick() {
                 for(let y = 0;y < 1;y++) WORLD.draw();   
                 frame = requestAnimationFrame(tick);

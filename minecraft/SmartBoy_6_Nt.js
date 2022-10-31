@@ -53,11 +53,11 @@ class SmartBoy6 {
         for(let i = 0;i < this.neuron_types.length;i++){
             let NT = {};
 
-            NT.threshold = this.rand.random();
-            NT.potential = this.rand.random();
+            NT.threshold = this.rand.random() * 2.5;
+            NT.potential = 0;
             
             // Neuron wide jusices
-            NT.std_juices = {
+            NT.std_juices = { 
                 // Release on just fired
                 discharge: {
                     val: GJ,
@@ -87,7 +87,6 @@ class SmartBoy6 {
                     decay: this.rand.random() * 0.0499 + 0.95
                 }
             };
-            
             NT.connection_juices_keys = Object.keys( NT.connection_juices );
 
 
@@ -102,7 +101,7 @@ class SmartBoy6 {
                 return NT.inputStdNn.activate( arguments );
             };
 
-
+            // Create std modification of the values
             NT.modifyStdNn = new StdNn( [
                 NT.std_juices_keys.length +
                 NT.connection_juices_keys.length +
@@ -203,30 +202,30 @@ class SmartBoy6 {
 
         // Sum up the signals and track which neurons are to be checked
 		while ( this.oracle.nexts.length > 0 ){
-			let signal = this.oracle.nexts.shift();
-			let neu = signal.o;
+			let signal =    this.oracle.nexts.shift();
+			let neu =       signal.o;
 
 			if ( neuronsCheckedSoFar.indexOf( neu ) === -1 ) {
 				neuronsCheckedSoFar.push( neu );
 			}
 			
-			//Add the val of this signal to the potential
-			var getWeight = function( nnn, neufrom ) {
-				for( let i = 0; i < nnn.incoming.length; i++ ) 
-					if(nnn.incoming[i].n === neufrom) return nnn.incoming[i];
-			};
-			let ww = getWeight( neu, signal.f );
+			// Add the val of this signal to the potential
+			let ww = Neuron.Neuron_getWeight( neu, signal.f );
+            // TODO threshold:
 			neu.potential += ww.w * signal.v;
 		}
 
 		// While there are neurons to fire?
 		for(let k = 0;k < neuronsCheckedSoFar.length;k++){
+
 			if(neuronsCheckedSoFar[k].potential + neuronsCheckedSoFar[k].bias > neuronsCheckedSoFar[k].threshold){
 				let spillage = neuronsCheckedSoFar[k].potential - neuronsCheckedSoFar[k].threshold;//TODO <- this could mean something
 
 				let sigmoidX = Math.abs(neuronsCheckedSoFar[k].potential);
+                // let modifiedThreshold = 
+                // if()
 				neuronsCheckedSoFar[k]._output = 0.0 + neuronsCheckedSoFar[k].output;
-				neuronsCheckedSoFar[k].output = Util.relu(sigmoidX); //sigmoid(sigmoidX);// + spillage/neuronsCheckedSoFar[k].threshold;//neuronsCheckedSoFar[k].potential / neuronsCheckedSoFar[k].threshold;//1.0;
+				neuronsCheckedSoFar[k].output = 1.0;//Util.relu(sigmoidX); //sigmoid(sigmoidX);// + spillage/neuronsCheckedSoFar[k].threshold;//neuronsCheckedSoFar[k].potential / neuronsCheckedSoFar[k].threshold;
 				
 				neuronsCheckedSoFar[k].potential = 0.0;//spillage/2.5;// 0;//+ spillage *0.01? lol maybe
 				neuronsCheckedSoFar[k].timesfired++;
@@ -328,21 +327,28 @@ class Neuron {
     
         this.output = 0.0;
         this._output = 0.0;
-        this.error = 0.0;
-        this._error = 0.0;
 
         // Cell wide juice
-        this.ct = -1;//Cell Type
+        this.ct = null;//Cell Type
 
     }
 
     static Neuron_instantiate( neu , neuronType){
-
+        neu.ct = neuronType;
     }
 
-    //TODO , dont let recurrent connections occur
-    static Neuron_connect( neu_from, neu_to, weight, tipe ){
-        let doesThisConnectionMakeADirectRecurssion = -1;
+    // Get thing
+    static Neuron_getWeight(neu, neuFrom){
+        for( let i = 0; i < neu.incoming.length; i++ ) {
+            if(neu.incoming[i].n === neuFrom) {
+                return neu.incoming[i];
+            }
+        }
+        return null;		
+    }
+
+    static Neuron_connect( neu_from, neu_to, weight ){
+        let doesThisConnectionMakeADirectRecurssion = false;
         //Check if there exists the neu_to's input in your own incomings
         /*for(let h = 0;h < neu_from.incoming.length;h++){
             if(neu_from.incoming[h].n.id === neu_to.id) doesThisConnectionMakeADirectRecurssion = h;
@@ -350,26 +356,26 @@ class Neuron {
         //Check if there is already an outgoing connection to this neuron
         for(let h = 0;h < neu_from.outgoing.length;h++){
             //if(! neu_from.outgoing[h].n || ! neu_to){console.log("WEWW ERR");console.log(neu_from.outgoing[h].n);console.log(neu_to);}
-            if(neu_from.outgoing[h].n.id === neu_to.id) doesThisConnectionMakeADirectRecurssion = h;
+            if( neu_from.outgoing[h].n.id === neu_to.id ) doesThisConnectionMakeADirectRecurssion = true;
         }
         //Cant connect to self?
-        if(neu_from.id === neu_to.id) doesThisConnectionMakeADirectRecurssion = 0;
+        if( neu_from.id === neu_to.id ) doesThisConnectionMakeADirectRecurssion = true;
         //Failed test, abort
-        if(doesThisConnectionMakeADirectRecurssion !== -1) return;
+        if( doesThisConnectionMakeADirectRecurssion ) return;
 
         //Succees test, make weight
         //if(!weight){console.log("ERR", "NEED A WEIGHT");process.exit(1);}
-        let w = weight == undefined ? OVERLORD_RAND.random() : weight;
+        let _w = weight == undefined ? neu_from.boy.rand.random() : weight;
         neu_from.outgoing.push({
-            "n": neu_to
+            n: neu_to
         });
-        let anglee = Math.PI * Math.random();
+
         neu_to.incoming.push({
-            "n": neu_from,
-            "w": w,
-            "m": 0.0,
-            "lr": 0,//last pulse received
-            "cr": 0//connection ratio 
+            n: neu_from,
+            w: _w,
+            m: 0.0, //  dk what this is for
+            lpr: 0,//   last pulse received
+            cr: 0//     connection ratio
         });
     }
 
@@ -378,9 +384,9 @@ class Neuron {
         neu.output = inp;
         for(let i = 0;i < neu.outgoing.length;i++){
             let valToAdd = {
-                "f": neu,
-                "o": neu.outgoing[i].n,
-                "v": neu.output
+                f: neu,
+                o: neu.outgoing[i].n,
+                v: neu.output
             };
             nxts.push(valToAdd);
         }

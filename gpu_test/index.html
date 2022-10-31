@@ -38,35 +38,39 @@
 
                     this.inicio = gpu.createKernel(
                         function() {
-                            var val = Math.trunc(Math.random()*2)
-                            this.color(val,val,val);
+                            var val = Math.trunc( Math.random() * 2 )
+                            this.color( val, val, val );
                         },
-                        {useLegacyEncoder:true,output:[dim, dim],graphical:true}
+                        { 
+                            useLegacyEncoder: true, 
+                            output: [dim, dim], 
+                            graphical: true
+                        }
                     );
 
 
                     this.kernel = gpu.createKernel(
                         function(m) {
-                        var s = 512
-                        var sum = 0;
-                        var h = this.thread.x
-                        var k =  s-1-this.thread.y
-                        var index = h*4+k*4*s
-                        var status=m[index]!=0?1:0;
-                        for(var j=-1;j<=1;j++){
-                            for(var i=-1;i<=1;i++){
-                                var x = (h+i+s) % s;
-                                var y = (k+j+s) % s;
-                                sum+=m[x*4+y*4*s]!=0?1:0;
+                            var s = 512
+                            var sum = 0;
+                            var h = this.thread.x
+                            var k =  s-1-this.thread.y
+                            var index = h*4+k*4*s
+                            var status=m[index]!=0?1:0;
+                            for(var j=-1;j<=1;j++){
+                                for(var i=-1;i<=1;i++){
+                                    var x = (h+i+s) % s;
+                                    var y = (k+j+s) % s;
+                                    sum+=m[x*4+y*4*s]!=0?1:0;
+                                }
                             }
-                        }
 
-                        sum-= status;
-                        var val=0;
-                        if (status==1 && (sum==3 || sum==2)) val=1;
-                        if (status==1 && ((sum<2) || (sum>3))) val=0;
-                        if (status==0 && sum==3) val=1;
-                        this.color(val,val,val);
+                            sum-= status;
+                            var val=0;
+                            if (status==1 && (sum==3 || sum==2)) val=1;
+                            if (status==1 && ((sum<2) || (sum>3))) val=0;
+                            if (status==0 && sum==3) val=1;
+                            this.color( val, val, val );
 
                         }, {useLegacyEncoder: true,output:[dim, dim],graphical: true}
                     );
@@ -78,12 +82,11 @@
 
                     this.inicio();
                     this.pixels = this.inicio.getPixels()
-
                 }
 
                 next(){
                     this.kernel(this.pixels)
-                    this.pixels=this.kernel.getPixels();
+                    this.pixels = this.kernel.getPixels();
                 }
 
                 draw(){
@@ -92,8 +95,8 @@
 
                 makeemptygrid(cols,rows){
                     var grid = new Array(cols);
-                    for(var i =0;i<cols;i++){
-                        grid[i]=(new Array(rows)).fill(0);
+                    for(var i = 0;i < cols;i++ ){
+                        grid[i] = (new Array(rows)).fill(0);
                     }
                     return grid;
                 }
@@ -101,8 +104,8 @@
 
                 makegrid(cols,rows){
                     var grid = new Array(cols);
-                    for(var i =0;i<cols;i++){
-                        grid[i]=(new Array(rows)).fill(0).map(a=>Math.trunc(Math.random()*2));
+                    for( var i = 0;i < cols;i++ ){
+                        grid[i] = ( new Array( rows )).fill( 0 ).map(a => Math.trunc( Math.random() * 2 ) );
                     }
                     return grid;
                 }
@@ -111,13 +114,17 @@
             var gol= new Gameoflife();
 
             function tick() {
-                for(let y = 0;y < 8;y++) gol.draw();   
-                frame = requestAnimationFrame(tick);
-                timeIndex++
-                if(timeIndex%800===0) console.log(timeIndex)
+                if( timeIndex < 1000 ){
+                    timeIndex++
+                    if(timeIndex%10===0)for(let y = 0;y < 1;y++) gol.draw();   
+                    frame = requestAnimationFrame(tick);
+                    if(timeIndex%100===0) console.log(timeIndex)
+                    
+                } else {
+                    console.log("done!");
+                }
             };
             requestAnimationFrame(tick);
-            //return context_canvas;
             
         </script>
         
