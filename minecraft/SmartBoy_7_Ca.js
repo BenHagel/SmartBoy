@@ -19,6 +19,8 @@ class SmartBoy7 {
         // Intensity of juice excretions (Excretion Magnitude)
         this.excMag = this.rand.random()*0.9;
 
+        this.counter = BigInt(1);
+
         // Cell chemicals released
         // juices decay at the rate of: this.variabiltiy *100 = %
         this.body_juice_count = 0;  // first 'x' juices are reserved for body
@@ -41,7 +43,10 @@ class SmartBoy7 {
 
         // How the juice propogates through cell
         this.excreteJuices = new StdNn(
-            [ this.juice_types.length, this.juice_types.length - this.body_juice_count],
+            [ 
+                this.juice_types.length,
+                this.juice_types.length - this.body_juice_count
+            ],
             this.seed + 3131
         );
 
