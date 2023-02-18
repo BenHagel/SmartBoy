@@ -108,23 +108,25 @@
         <script>
             // Oracle control occurs here
             const randWorldSeed = Math.floor( Math.random() * 100300500 );
-            console.log( 'Rand world seed:', randWorldSeed );
-            var WORLD = new World( randWorldSeed, document.getElementById( 'canvForGPUToUse' ) );
-
             const randBoySeed = Math.floor( Math.random() * 30300500 );
-            console.log( 'Rand boy seed:', randBoySeed );
-            // Create new boy with 16 pixels across
-            // var BOY = new SmartBoy6( 16, randBoySeed, document.getElementById('p5BoyCanvas'));
+            const randEnvSeed = Math.floor( Math.random() * 32 );// thirty-two worlds of exciting adventure!
 
+
+
+            console.log( 'Rand world seed:', randWorldSeed );
+            console.log( 'Rand boy seed:', randBoySeed );
+            console.log( 'Rand environment seed:', randEnvSeed );
+
+            var WORLD = new World( randWorldSeed, document.getElementById( 'canvForGPUToUse' ) );
             var running = true;
             var BOY = new SmartBoy8( 
-                5, 
-                60,//Expected processing 60 signal waves per second in the simulation
+                6, 
+                60,//Desired FPS processing 60 signal waves per second in the simulation
                 randBoySeed, 
                 document.getElementById('p5BoyCanvas') 
             );
 
-            var ENV = new Environment(randBoySeed)
+            var ENV = new Environment(randEnvSeed)
 
 
             // Code to test the normal distribution
@@ -172,10 +174,6 @@
 
             }
 
-            function moveDiagonally(){
-                BOY.pulseStep(1, [1, 1, 1, 1, 1] );
-            }
-
             function tick() {
                 if(running){
                     //for(let y = 0;y < 1;y++) WORLD.draw();   
@@ -187,10 +185,12 @@
 
                     // Update counter:
                     let dd = document.getElementById("timeShower")
-                    dd.innerHTML = 
-                        "Boy timeIndex: " + BOY.oracle.timeindex + "<br>"
+                    dd.innerHTML = ""
+                        + "Boy timeIndex: " + BOY.oracle.timeindex + "<br>"
+                        + "Boy lobes: " + BOY.pu_types.length + "<br>"
+                        + "Boy nexts: " + BOY.oracle.nexts.length + "<br>"
                         + "Env timeIndex: " + ENV.timeIndex + "<br>"
-                        + "Env sunHeight: " + ENV.sunHeight;
+                        + "Env sunHeight: " + ENV.sunHeight + "<br>"
                 }
                 setTimeout(tick, 16)
             };

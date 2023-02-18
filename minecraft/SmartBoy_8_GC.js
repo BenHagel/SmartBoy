@@ -68,9 +68,23 @@ class PU{
         return -(val*portion * fctor)
     }
 
-    // Called once every update,
-    static DECAY_ITERATIONS(pu, ){
+    // Update the threshold base don # of connections (usually done just once though)
+    static SET_BASE_THRESHOLD(pu){
+        pu.threshold = pu.pu_bp.thresholdPerWeight * pu.in_bonds.length
+    }
 
+    // Called once every update,
+    static DECAY_ITERATIONS(pu, iters){
+        for(let i = 0;i < iters;i++){
+
+            // The potential
+            pu.potential *= pu.pu_bp.potentialDecay
+
+            // The pulse juice
+            pu.fireJuice *= pu.pu_bp.postFireJuiceDecay
+
+
+        }
 
     }
 
@@ -92,8 +106,14 @@ class PU{
     static STEP_PU(pu){
         // Receive all the inputs (added into potential)
 
-        let boy = pu.bf
+        let boy = pu.bf;
 
+        // Decay differences (needs to be done before processing the inputs, 
+        // otherwise it is skipping time (would cause jumps/jiter between signals cause lots of time could have passed))
+        let indexDifference = boy.oracle.timeindex - pu.lastObserved
+        PU.DECAY_ITERATIONS(pu, indexDifference);
+
+        // If this PU will fire
         if(pu.potential >= pu.threshold){
 
             //Send nexts out (if threshold)
@@ -102,13 +122,13 @@ class PU{
                 boy.oracle.nexts.push(nextSignal);
             }
 
-
-            pu.potential = 0
-
+            pu.potential = 0;
+            pu.fireJuice = 1;
         }
 
-        // Decay differences
-        PU.DECAY_ITERATIONS(pu, indexDifference);
+
+
+        
         
 
         pu.lastObserved = boy.oracle.timeindex;
@@ -130,13 +150,14 @@ class PU{
     
 
     constructor(boyRef, boyInd){
-        this.bf = boyRef// Refernce to the boy
+        this.bf = boyRef;// Refernce to the boy
         this.bi = boyInd;
-        this.lastObserved = this.bf.oracle.timeindex
+        this.lastObserved = 0;//this.bf.oracle.timeindex;
+        //this.physX = 
         this.id = PU.CURR_ID;
         PU.CURR_ID++;
 
-        this.pu_bp = this.bf.pu_types[boyInd]//Processiong Unit blueprint
+        this.pu_bp = this.bf.pu_types[boyInd];//Processiong Unit blueprint
 
         // Collection of bonds to its nearest neighbours...
         this.in_bonds = [];     // this.pu_bp configs effects this array
@@ -145,7 +166,7 @@ class PU{
         // state of instance of Processing Unit
         this.health = PU.MAX_HEALTH;
         this.reputation = 0.5;
-        this.potential = 0.5;//potential
+        this.potential = 0.0;//potential
         this.threshold = 0.5;//this.pu_bp // Gets reset after all connections are hooked up
         this.fireJuice = 0;//Between 1 and 0, decay rate based off
     }
@@ -154,14 +175,14 @@ class PU{
 
 class SmartBoy8 {
 
-	constructor( grid_size, predictedFPS, seed, p5CanvsIdToUse ) {
+	constructor( grid_size, desireableFPS, seed, p5CanvsIdToUse ) {
 		// ID tracker for generating neurons
 		this.NEURON_ID_STAMP = -1;
 
 		// Custom random
         this.seed = seed;
 		this.rand = new PseudRand( seed );
-        this.vanityFPS = predictedFPS;
+        this.vanityFPS = desireableFPS;
 
         // Decay variability
         this.decVar = 0.1;//       0.1 = 10% (so 0.9-0.999 decary rate)
@@ -239,6 +260,7 @@ class SmartBoy8 {
 
                 // Decay rates for the big 4 juices
                 postFireJuiceDecay: (1-this.decVar) + (this.decVar - 0.001*this.decVar) * this.rand.GET_GENE(), //0.9-0.999 decary rate)
+                potentialDecay: (1-this.decVar) + (this.decVar - 0.001*this.decVar) * this.rand.GET_GENE(),
 
                 // Called to massage every input
                 input_NN: new StdNn(
@@ -259,7 +281,6 @@ class SmartBoy8 {
 
                 // Threshold updates
                 thresholdPerWeight: 0.15 + this.rand.GET_GENE() * 3,
-                thresholdDecay: 0.8 + this.rand.GET_GENE() * 0.2,
                 thresholdadj_NN: new StdNn(
                     [   // state of whole organism      //input //input meta
                         this.body_juice_types.length    + 1     + this.input_meta.length, 
@@ -320,10 +341,7 @@ class SmartBoy8 {
                 for(let b = 0;b < cohesion_attempts;b++){
                     let ind = Math.floor((currLobe.length-1) * this.rand.GET_GENE())
                     ind = (j + 1 + ind) % currLobe.length;
-
-
                     Bond.CONNECT_TO(individualCell, currLobe[ind], 0.15 + this.rand.GET_GENE()*0.8)
-
                 }
 
 
@@ -334,19 +352,35 @@ class SmartBoy8 {
 
                     for(let b = 0;b < adhesion_attempts;b++){
                         let ind = Math.floor(toLobe.length * this.rand.GET_GENE());
-
-
                         Bond.CONNECT_TO(individualCell, toLobe[ind], 0.15 + this.rand.GET_GENE()*0.8)
-
                     }
                     
                 }
 
 
             }
-            
-            
+        }
 
+////////// Update the thresholds based on # of connections
+////////// 
+        for (let i = 0; i < this.all_PUs.length; i++) {
+            for (let j = 0; j < this.all_PUs[i].length; j++) {
+
+                // Last check to make sure at least one boy is connected 
+                while(this.all_PUs[i][j].in_bonds.length < 1){
+                    Bond.CONNECT_TO(
+                        this.all_PUs[i][j].pu_bp.PUs[
+                            Math.floor(this.all_PUs[i][j].pu_bp.PUs.length * this.rand.GET_GENE())
+                        ],
+                        this.all_PUs[i][j],
+                        0.15 + this.rand.GET_GENE()*0.8
+                    )
+                }
+
+                // Now update the base threshoold
+                PU.SET_BASE_THRESHOLD(this.all_PUs[i][j]);
+
+            }
         }
         // Contains the global meta info on the whole network
         this.oracle = {
@@ -379,7 +413,7 @@ class SmartBoy8 {
                 };
 
                 p.draw = function() {
-                    if( BOY ){
+                    if( BOY && BOY.all_PUs){
                         p.background( 20, 10, 10 );
 
                         let readGrid = BOY.all_PUs;//BOY.oracle.timeindex % 2 === 0 ? BOY.the_grid_COPY : BOY.the_grid;
@@ -399,23 +433,18 @@ class SmartBoy8 {
 
                 p.drawSingleGridUnit = function(gu, xx, yy) {
                     p.noStroke();
-                    p.fill( gu.id*10 );
 
+                    // Show base power (out of 255 white)
+                    p.fill( (gu.potential / gu.threshold)*255 );
+
+                    // Show the fire juice
                     p.push();
                         p.translate(40 + xx * 16, 40 + yy * 16);
                         p.rect(0, 0, 12, 12);
 
-                        p.fill(gu[0]*255, 0, 0);
-                        p.ellipse(-4, -4, 5, 5);
-                        
-                        p.fill(gu[1]*255, gu[1]*127, 0);
-                        p.ellipse(4, -4, 5, 5);
-                        
-                        p.fill(0, gu[2]*255, 0);
-                        p.ellipse(-4, 4, 5, 5);
-                        
-                        p.fill(0, 0, gu[3]*255);
-                        p.ellipse(4, 4, 5, 5);
+                        p.fill(gu.fireJuice*255, 0, 0);
+                        p.ellipse(0, 0, 5, 5);
+
                     p.pop();
                 };
 
@@ -466,59 +495,53 @@ class SmartBoy8 {
     step(agentsInputs) {
         //if(this.oracle.timeindex %50===0) console.log(agentsInputs)
 
+        // Update the timeindex here, so STEP_PU for the agentsInputs dont get updated
+        // twice if a signal is also in the "this.oracle.nexts"
         this.oracle.timeindex++;
 
-		let neuronsCheckedSoFar = [];
 
-        // TODO add in the agents new inputs
-        //agentsInputs
+        // Just shove them into the nearest lobe (always the first one)
         for(let z = 0;z < agentsInputs.length;z++){
-            
+            let inputPU = this.pu_types[0].PUs[z];
+            inputPU.potential += agentsInputs[z];
+            PU.STEP_PU(inputPU)
+
+            //if(z===3) console.log(inputPU.potential)
+
+            // for(let g = 0;g < inputPU.out_bonds.length;g++){
+
+            //     let inputSignal = new Nexter(
+            //         inputPU.out_bonds[g], 
+            //         agentsInputs[z]
+            //     );
+            //     this.oracle.nexts.push(inputSignal);
+
+            // }
         }
 
+
+
+		let PUs2Check = [];
         // Sum up the signals and track which neurons are to be checked
 		while ( this.oracle.nexts.length > 0 ){
 			let nexter_signal =    this.oracle.nexts.shift();
 			let puReceiving =       nexter_signal.bond.to;
 
-			if ( neuronsCheckedSoFar.indexOf( puReceiving ) === -1 ) {
-				neuronsCheckedSoFar.push( puReceiving );
+			if ( PUs2Check.indexOf( puReceiving ) === -1 ) {
+				PUs2Check.push( puReceiving );
 			}
 			
             // TODO input NN:
-			puReceiving.potential += nexter_signal.bond.w * nexter_signal.value;
+			puReceiving.potential += nexter_signal.bond.weight * nexter_signal.value;
 		}
 
 
 
 		// While there are neurons to fire?
-		for(let k = 0;k < neuronsCheckedSoFar.length;k++){
-            PU.STEP_PU(currPU)
+		for(let k = 0;k < PUs2Check.length;k++){
+            PU.STEP_PU(PUs2Check[k])
         }
 
-
-
-        // Loop through the read grid 
-        // for(let i = 0;i < this.all_PUs.length;i++){
-        //     for(let j = 0;j < this.all_PUs[i].length;j++){
-
-        //         let currPU = this.all_PUs[i][j];
-
-        //         PU.STEP_PU(currPU)
-
-
-        //         // TODO just process the signasl
-
-                
-
-
-        //         // if(i === 5 && j === 6){
-        //         //     console.log(outputJuices);
-        //         //     console.log(currCellToRead);
-        //         // }
-
-        //     }
-        // }
 
         // Decay the juices
         for( let h = 0; h < this.body_juice_types.length; h++ ){
