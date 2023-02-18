@@ -3,6 +3,8 @@ let frame;
 
 
 class World {
+
+    
     constructor(seed, contextHTMLCanvas) {
         const gpu = new GPU({
             canvas: contextHTMLCanvas,
@@ -59,6 +61,8 @@ class World {
         this.pixels = this.inicio.getPixels()
 
     }
+
+
 
     next(){
         this.timeIndex++;

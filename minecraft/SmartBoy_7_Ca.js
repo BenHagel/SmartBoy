@@ -226,9 +226,9 @@ class SmartBoy7 {
 
             }
         }
-
-        
     }
+
+    // Step the normal connected way
 
 	
 

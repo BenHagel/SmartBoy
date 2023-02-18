@@ -7,8 +7,10 @@
 		<script src="p5.min.js"></script>
         <script src="StdNn.js"></script>
         <script src="world_kernels.js"></script>
+        <script src="environment_puzzles.js"></script>
         <script src="SmartBoy_6_Nt.js"></script>
         <script src="SmartBoy_7_Ca.js"></script>
+        <script src="SmartBoy_8_GC.js"></script>
 
         <style>
             body{
@@ -52,8 +54,14 @@
 
             Adult juice^ (Neuron complains more if expectations aren't met)
 
-            When neuron fires, it gives a little bit of its HEALTH.
-                The neuron
+            PU Attributes:
+            Health
+            Stats last received
+
+            Generation:
+            # of types of cells [1-4]
+
+            Generate the repeater puzzles 
 
             
 
@@ -88,11 +96,13 @@
         </div>
 
 
-        <canvas id="canvForGPUToUse"></canvas>
+        <canvas class="hidden" id="canvForGPUToUse"></canvas>
         <div id="p5BoyCanvas">
             <p>Boys Brain:</p>
-            <button onclick="addInputs()">Step</button>
-            <button onclick="moveDiagonally()">StepPULSE</button>
+            <button id="sstop" onclick="toggleRunner()">stop</button>
+        </div>
+        <div id="timeShower">
+
         </div>
 
         <script>
@@ -101,64 +111,64 @@
             console.log( 'Rand world seed:', randWorldSeed );
             var WORLD = new World( randWorldSeed, document.getElementById( 'canvForGPUToUse' ) );
 
-            const randBoySeed = Math.floor( Math.random() * 300300500 );
+            const randBoySeed = Math.floor( Math.random() * 30300500 );
             console.log( 'Rand boy seed:', randBoySeed );
             // Create new boy with 16 pixels across
             // var BOY = new SmartBoy6( 16, randBoySeed, document.getElementById('p5BoyCanvas'));
-            var BOY = new SmartBoy7( 16, randBoySeed, document.getElementById('p5BoyCanvas') );
+
+            var running = true;
+            var BOY = new SmartBoy8( 
+                5, 
+                60,//Expected processing 60 signal waves per second in the simulation
+                randBoySeed, 
+                document.getElementById('p5BoyCanvas') 
+            );
+
+            var ENV = new Environment(randBoySeed)
 
 
-            // Old plan
-            // Create the Smart boy agent, std nn,
-            // Show the smart boy in 2d grid w p5js 
-            //      + its various NT and hover over for even more detailed information
-            // Show the 5-6 StdNN's values , weights of connectons for each, 
-            
-            // Create the bridge back and forther between smart boy and minecraft world.
-            // Create the various elements in the World
-            // Multiple iterations per SB step
-            // Reward and  punishment functions - top down associate signals w other stuff.
-            
-            // New plan
-
-            
+            // Code to test the normal distribution
             // let avgs = [];
             // var insize = 7;
-            // let nn = new StdNn( 
-            //     [insize, 4], 
+            // var outsize = 4
+            // let standardNeuralNetwork = new StdNn( 
+            //     [insize, outsize], 
             //     152398237 + Math.floor(23191233 * Math.random()) 
             // );
-
             // // The 0 case
             // let kks = new Array(insize); for(let o=0;o<kks.length;o++) kks[o] = 0;
-            // let out = nn.activate(kks);
+            // let out = standardNeuralNetwork.activate(kks);
             // // avgs.push(out[0])
             // console.log(out);
-
             // // The 1 case
             // for(let o=0;o<kks.length;o++) kks[o] = 1;
-            // out = nn.activate(kks);
+            // out = standardNeuralNetwork.activate(kks);
             // // avgs.push(out[0])
             // console.log(out);
-
             // //Randoms
             // console.log('rr-r-r-r-r-r-r-r-r-r-r-r-r-random')
             // for(let u = 0;u < 10;u++){
-            //     let kks = new Array(insize); for(let o=0;o<kks.length;o++) kks[o] = Math.random();
-            //     let out = nn.activate(kks);
+            //     //let kks = new Array(insize); 
+            //     for(let o=0;o<kks.length;o++) kks[o] = Math.random();
+            //     let out = standardNeuralNetwork.activate(kks);
             //     // avgs.push(out[0])
             //     console.log(out);
             // }
 
 
             
-            function addInputs(){
+            function toggleRunner(){
+
+                let hub = document.getElementById('sstop');
+                running = !running
+                hub.innerText = (!running)?"start":"stop";
                 // For SmartBoy 6 inputs
                 //BOY.activate([1,2,3,4,5,5,8]);
                 //BOY.step();
 
                 // For SmartBoy 7 inputs
-                BOY.step()
+                // BOY.step()
+
 
             }
 
@@ -167,9 +177,24 @@
             }
 
             function tick() {
-                for(let y = 0;y < 1;y++) WORLD.draw();   
-                frame = requestAnimationFrame(tick);
+                if(running){
+                    //for(let y = 0;y < 1;y++) WORLD.draw();   
+                    //frame = requestAnimationFrame(tick);
+
+                    // For Smart Boy 8 inputs
+                    Environment.stepConsciousness(BOY, ENV)
+
+
+                    // Update counter:
+                    let dd = document.getElementById("timeShower")
+                    dd.innerHTML = 
+                        "Boy timeIndex: " + BOY.oracle.timeindex + "<br>"
+                        + "Env timeIndex: " + ENV.timeIndex + "<br>"
+                        + "Env sunHeight: " + ENV.sunHeight;
+                }
+                setTimeout(tick, 16)
             };
+            tick();
             //requestAnimationFrame(tick);
         </script>
 

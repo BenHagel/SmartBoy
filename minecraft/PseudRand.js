@@ -6,6 +6,10 @@ class PseudRand{
         this.c = 1013904223
     }
 
+    GET_GENE(){
+        return this.random();
+    }
+
     random(){
         let returnVal = this.seed / this.modulus
         this.seed = (this.a * this.seed + this.c) % this.modulus
