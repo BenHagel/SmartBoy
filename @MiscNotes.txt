@@ -1,0 +1,94 @@
+Get measurable output - and track body juices w visual bars
+
+Separate the lobes by the regular freq updater
+-weight adjuster
+-threshold adjuster
+
+
+Input receiver's NN,
+Health adjuster NN (weight)
+Reputation adjuster NN (weight)
+
+input_meta tracker (arrow keys in p5js to see it)
+Test out more complex NN's output distributuoin (multi layerd?ED)
+
+Change the thigns that need to be 
+Sliudes, into slides.... 
+Like the weights:
+Health:
+Reputation:
+Threshold Modulation?
+
+
+
+
+
+Get through to the structured archieicutre
+
+Move to the health based and rep. function replicating, biological model
+
+
+
+
+
+
+
+
+
+
+
+Differneitable computing: represting all the 
+Constructing a 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Let us encapsualte the smallest 
+
+
+Aligning the incentiveces of the cognitive system with the incentives of vessel.
+We're probably very close...
+
+Just need to find the simplest set of rules i can define with additions and multiplications that define pattern recreation.
+
+Health: how often your model is correct,
+Reputation: how often your send-to PU is happy
+
+Threshold changes (based on thes two^)
+How much work did nature have to do to be left behind
+
+Joshca, you had a lot of good ideas about consciouscenss and intelligence,
+and you did all of that because you didn't have the brute force computational
+power to offload all that thinking.  Just get the computer to guess numbers.
+All that needs to be done is the set of rules that would encapsulate it...
+
+https://www.youtube.com/watch?v=WRdJCFEqFTU
+32:00
+^ You should always be giving all of yourself away all the time, 
+//This is the high T inteprretation of that
+
+
+
+
+
+
+
+
+
+
+
+what is the neuron equivalnet of figuring out where it is?

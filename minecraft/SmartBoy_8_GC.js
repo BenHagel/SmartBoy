@@ -73,20 +73,6 @@ class PU{
         pu.threshold = pu.pu_bp.thresholdPerWeight * pu.in_bonds.length
     }
 
-    // Called once every update,
-    static DECAY_ITERATIONS(pu, iters){
-        for(let i = 0;i < iters;i++){
-
-            // The potential
-            pu.potential *= pu.pu_bp.potentialDecay
-
-            // The pulse juice
-            pu.fireJuice *= pu.pu_bp.postFireJuiceDecay
-
-
-        }
-
-    }
 
     // Update the health based 
     // Update to the newest threshold
@@ -111,7 +97,8 @@ class PU{
         // Decay differences (needs to be done before processing the inputs, 
         // otherwise it is skipping time (would cause jumps/jiter between signals cause lots of time could have passed))
         let indexDifference = boy.oracle.timeindex - pu.lastObserved
-        PU.DECAY_ITERATIONS(pu, indexDifference);
+        SB8_LU.DECAY_PU_ATTRIBUTES(pu, indexDifference)
+
 
         // If this PU will fire
         if(pu.potential >= pu.threshold){
@@ -193,34 +180,15 @@ class SmartBoy8 {
         this.counter = 0;//BigInt(1);
 
         // List of agent-wide (shared among PUs) attributes
-        this.body_juice_types = [
-            {
-                val: 0, 
-                decay: (1-this.decVar) + (this.decVar - 0.001*this.decVar) * this.rand.GET_GENE()
-            },
-
-            //     Pain juice
-            {
-                val: 0, 
-                decay: (1-this.decVar) + (this.decVar - 0.001*this.decVar) * this.rand.GET_GENE()
-            },
-
-            //     Sleepy juice
-            {
-                val: 0, 
-                decay: (1-this.decVar) + (this.decVar - 0.001*this.decVar) * this.rand.GET_GENE()
-            }
-        ];
-
-        
-
-
+        this.body_juice_types = SB8_LU.GET_AGENT_JUICE_TYPES(this);
 
         this.grid_size = grid_size;
         this.num_of_PUs = this.grid_size * this.grid_size
+
 ////////// Blueprint do nothing
 ////////// Blueprint for input meta to track connection health
-        this.input_meta_depth = 9;
+
+        this.input_meta_depth = SB8_LU.GET_INPUT_META_DEPTH_LENGTH(this);
         this.input_meta = [];
         let fib1 = 1;
         let fib2 = 1;
@@ -237,68 +205,24 @@ class SmartBoy8 {
 
 ////////// Develop PU types and PU grid
 ////////// Each PU type
-        this.pu_type_amt = 2//1 + Math.floor(this.rand.GET_GENE() * 2);
 
-        let minSize = Math.floor(this.num_of_PUs / this.pu_type_amt)
-        let remainder = this.num_of_PUs - (minSize * this.pu_type_amt)
+        this.pu_type_amt = SB8_LU.GET_NUM_DIFFERENT_TYPES_LOBES(this);
+
+        
 
         this.pu_types = new Array(this.pu_type_amt);
         for(let h = 0;h < this.pu_types.length;h++){
 
+            let lobeId = h;
             // Create new PU Type object
-            this.pu_types[h] = {
-
-                population: h===0 ? minSize+remainder : minSize,
-
-                // Connectivity
-                cohesionOutputs_min: 2,
-                //cohesionOutputs_weightRange: 1,
-                adhesionOutputs_min: 1,
-                //adhesionOutputs_weightRange: 3,
-
-                globalNudgePortion: 0.3,      // PU.NUDGE_UP_1(val, 0.3, fctor){
-
-                // Decay rates for the big 4 juices
-                postFireJuiceDecay: (1-this.decVar) + (this.decVar - 0.001*this.decVar) * this.rand.GET_GENE(), //0.9-0.999 decary rate)
-                potentialDecay: (1-this.decVar) + (this.decVar - 0.001*this.decVar) * this.rand.GET_GENE(),
-
-                // Called to massage every input
-                input_NN: new StdNn(
-                    [   // state of whole organism      //input
-                        this.body_juice_types.length    + 1     , 
-                        1
-                    ],
-                    this.seed + 3131),
-
-                // Called to massage weight Nudge
-                weightadj_NN: new StdNn(
-                    [   // state of whole organism      //input //input meta
-                        this.body_juice_types.length    + 1     + this.input_meta.length, 
-                        1
-                    ],
-                    this.seed + 543),
-                weightadj_FRQ: 2 + Math.floor(this.rand.GET_GENE() * (this.vanityFPS-2)),// 1 - 60
-
-                // Threshold updates
-                thresholdPerWeight: 0.15 + this.rand.GET_GENE() * 3,
-                thresholdadj_NN: new StdNn(
-                    [   // state of whole organism      //input //input meta
-                        this.body_juice_types.length    + 1     + this.input_meta.length, 
-                        1
-                    ],
-                    this.seed + 543),
-                thresholdadj_FRQ: 2,
-
-                health: 1,
-
-                PUs: []
-            };
+            this.pu_types[h] = SB8_LU.GET_NEW_PU_TYPE(this, lobeId)
 
         }
 
 
 ////////// Populate iterable grid
 ////////// 
+
         let currPuTypeIndex = 0
         let currPopulation = this.pu_types[currPuTypeIndex].population;
 		this.all_PUs = new Array( grid_size );
@@ -324,7 +248,7 @@ class SmartBoy8 {
             }
         }
 
-////////// Connect
+////////// Connect all the PUs
 ////////// 
 
         // Per each lobe
@@ -363,6 +287,7 @@ class SmartBoy8 {
 
 ////////// Update the thresholds based on # of connections
 ////////// 
+
         for (let i = 0; i < this.all_PUs.length; i++) {
             for (let j = 0; j < this.all_PUs[i].length; j++) {
 
