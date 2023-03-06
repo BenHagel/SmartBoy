@@ -11,6 +11,7 @@
         <script src="SmartBoy_6_Nt.js"></script>
         <script src="SmartBoy_7_Ca.js"></script>
         
+        <script src="SmartBoy_8_GC_HelperFuncs.js"></script>
         <script src="SmartBoy_8_GC_Logic_Blueprint.js"></script>
         <script src="SmartBoy_8_GC.js"></script>
 
@@ -100,7 +101,7 @@
 
         <canvas class="hidden" id="canvForGPUToUse"></canvas>
         <div id="p5BoyCanvas">
-            <p>Boys Brain:</p>
+            <p>Agent:</p>
             <button id="sstop" onclick="toggleRunner()">stop</button>
         </div>
         <div id="timeShower">
@@ -127,6 +128,8 @@
                 randBoySeed, 
                 document.getElementById('p5BoyCanvas') 
             );
+
+            var INVESTIGATIVE_PU = null;
 
             var ENV = new Environment(randEnvSeed)
 

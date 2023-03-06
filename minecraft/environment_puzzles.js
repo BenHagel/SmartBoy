@@ -7,7 +7,7 @@ class Environment{
         // Get what the agent is supposed to see based on on the environment
         let agentView = env.getConsciousView()
         // Propogate the agent view + existing signals 
-        boy.step(agentView);
+        boy.step(agentView, "isThiSWholeGridUpdate");
 
         // Consciousness first
         for(let i = 0;i < env.fpd;i++) env.step();

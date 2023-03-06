@@ -11,7 +11,7 @@ class World {
             mode: 'gpu'
         });
 
-        const dim = 256;
+        const dim = 128;
 
         this.timeIndex = 0;
 
@@ -22,34 +22,34 @@ class World {
                 var val = Math.trunc( Math.random() * 2 );
                 this.color( val, val, val );
             },
-            { useLegacyEncoder:true, output: [dim, dim], graphical: true }
+            { useLegacyEncoder: true, output: [dim, dim], graphical: true }
         );
 
 
         this.kernel = gpu.createKernel(
             function(m) {
-            var s = 256
-            var sum = 0;
-            var h = this.thread.x
-            var k =  s-1-this.thread.y
-            var index = h*4+k*4*s
-            var status=m[index]!=0?1:0;
-            for(var j=-1;j<=1;j++){
-                for(var i=-1;i<=1;i++){
-                    var x = (h+i+s) % s;
-                    var y = (k+j+s) % s;
-                    sum+=m[x*4+y*4*s]!=0?1:0;
+                var s = 128
+                var sum = 0;
+                var h = this.thread.x
+                var k =  s-1-this.thread.y
+                var index = h*4+k*4*s
+                var status=m[index]!=0?1:0;
+                for(var j=-1;j<=1;j++){
+                    for(var i=-1;i<=1;i++){
+                        var x = (h+i+s) % s;
+                        var y = (k+j+s) % s;
+                        sum+=m[x*4+y*4*s]!=0?1:0;
+                    }
                 }
-            }
 
-            sum-= status;
-            var val=0;
-            if (status==1 && (sum==3 || sum==2)) val=1;
-            if (status==1 && ((sum<2) || (sum>3))) val=0;
-            if (status==0 && sum==3) val=1;
-            this.color(val,val,val);
+                sum-= status;
+                var val=0;
+                if (status==1 && (sum==3 || sum==2)) val=1;
+                if (status==1 && ((sum<2) || (sum>3))) val=0;
+                if (status==0 && sum==3) val=1;
+                this.color(val,val,val);
 
-            }, {useLegacyEncoder: true,output:[dim, dim],graphical: true}
+            }, { useLegacyEncoder: true, output: [dim, dim], graphical: true }
         );
 
         this.cols=dim;

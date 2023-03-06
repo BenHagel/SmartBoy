@@ -57,7 +57,7 @@ Constructing a
 
 
 
-Let us encapsualte the smallest 
+Let us encapsualte the smallest unit of learning possible
 
 
 Aligning the incentiveces of the cognitive system with the incentives of vessel.
@@ -87,8 +87,132 @@ https://www.youtube.com/watch?v=WRdJCFEqFTU
 
 
 
+Explain it out in plain english:
+	Creating an envioenrment + agent,
+"Starting with a marble block,
+	Need to guess what parts to shave away to produce statue of David"
+
+1)
+I don't know how to make intelligence 
+
+2)
+Just need to define the block of marble (domain of numbers)
+Then guess the numbers and measure which ones score the highest on a test
+	(Over time this produces the best Statue)
+	
+3)
+And guess random numbers at these metrics until,
+
+An agent that is directly controlled by this collection of PROCESSING UNITS
+Mapping a list of pulses over time to an output that seeks to minimize
+
+
+
+Health of the cell
+Reputation of the cell 
+Inputs:
+	regularity of 
+	
+
+Need to define a set of functions that the cell uses to survive.
+
+From Agent POV:
+Pain Juice:::::
+Reward Juice:::::
+
+From PU POV:		''=to be explained, []=a gene 0.0-1.0, NN=new StdNN object
+Adjust weights every frame, based on:
+	a 'coeffient' to this PU's [LR]
+	an NN <- [B_reward, B_pain, B_eepy] + 
+Because it's state dependant.
+
+
+
+
+
+
+Get the statistics again on larger StdNn objects
+
+Create the slider objects for the HEALTH, and REP + associated portion values
+Create the Wf number and the Wf NN, 
+
+Visual show the and the rew, pain, sleep hormones
+
+
+
+
+
+
+
+
 
 
 
 
 what is the neuron equivalnet of figuring out where it is?
+
+
+
+
+
+
+
+
+
+
+
+
+
+Secondary idea: negentropy machine:
+
+2D Grid
+-Each layer has a breakthrough threshold for measured negentropy
+it is increased
+
+The chaos to the order
+
+Timing of the blips,? relate the blips to one another
+Associatation of the blips with one another
+
+The adaptive functions are randomly generated, 
+the learning space .
+
+Needs to synchronize w the environment 
+, so as to regulate itself
+
+Small regular, interacting loop,
+
+It's a programming language that generates its own variable types.
+S
+
+Intelligent Amoeba that started bargaining? 
+
+
+
+
+
+
+
+
+
+FOr a given environemnt there is a maximum intelligence?, 
+a maximum compression from where all else stems from
+It is not known that given the secrets of the universe our monkey brain could grasp the concept, 
+but all signs point to yes,
+We have comprehended the observable universe so far,
+
+Evolution is solving repelling entropy from the cell
+	evolution creates a simulation to deal with the simulation
+Agi is solving pattern matching
+
+
+
+
+
+
+
+
+
+
+
+

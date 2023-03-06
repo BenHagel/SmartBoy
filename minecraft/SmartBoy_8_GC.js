@@ -1,163 +1,8 @@
-//var path1 = require('path');
-//const fs1 = require('fs');
-//var {SHA3} = require('sha3');
 
-//const {GPU} = require('gpu.js');
+//Requried before running:
 
-
-class Nexter{
-    constructor(bond, value){
-        this.bond = bond;
-        this.value = value;
-    }
-}
-
-class Slide {
-    static up(sld, portion){
-        sld.val += (1-val)*sld.portion * fctor
-    }
-    constructor(val, portion){
-        this.val = val;
-        this.portion = portion
-    }
-}
-
-class Bond{
-
-    // Check if bond already exists
-    static BOND_EXISTS(from, to){
-        for(let h = 0;h < from.out_bonds.length;h++){
-            //if(! neu_from.outgoing[h].n || ! neu_to){console.log("WEWW ERR");console.log(neu_from.outgoing[h].n);console.log(neu_to);}
-            if( from.out_bonds[h].from === from && from.out_bonds[h].to === to) return true;
-        }
-        return false;
-    }
-
-    // Connect unit
-    static CONNECT_TO(from, to, weight){
-        if( !(from===to) && !Bond.BOND_EXISTS(from, to) ){
-            let nuBond = new Bond(from, to, weight );
-            from.out_bonds.push(nuBond);
-            to.in_bonds.push(nuBond);
-        }
-    }
-
-    // Constructor
-    constructor(from, to, weight){
-        this.from = from;
-        this.to = to;
-        this.weight = weight;
-
-        // Values nudge up n down based on how important they are
-        this.rates = new Array(from.bf.input_meta.length);
-        for(let k = 0;k < this.rates.length;k++) this.rates[k] = 0.0;//alsways nudged between 0 and 1
-    }
-}
-
-class PU{
-    static MAX_HEALTH = 1;
-    static CURR_ID = 0;
-    
-    // Push up towards 1
-    static NUDGE_UP_1(val, portion, fctor){
-        return (1-val)*portion * fctor
-    }
-
-    // Push down towards 0
-    static NUDGE_DOWN_0(val, portion, fctor){
-        return -(val*portion * fctor)
-    }
-
-    // Update the threshold base don # of connections (usually done just once though)
-    static SET_BASE_THRESHOLD(pu){
-        pu.threshold = pu.pu_bp.thresholdPerWeight * pu.in_bonds.length
-    }
-
-
-    // Update the health based 
-    // Update to the newest threshold
-    static UPDATE_THRESHOLD(pu){
-
-    }
-
-    // Pass the inputs through NN
-    static RECEIVE_INPUT(pu){
-
-    }
-
-    static FIRE_PU(pu){
-
-    }
-
-    static STEP_PU(pu){
-        // Receive all the inputs (added into potential)
-
-        let boy = pu.bf;
-
-        // Decay differences (needs to be done before processing the inputs, 
-        // otherwise it is skipping time (would cause jumps/jiter between signals cause lots of time could have passed))
-        let indexDifference = boy.oracle.timeindex - pu.lastObserved
-        SB8_LU.DECAY_PU_ATTRIBUTES(pu, indexDifference)
-
-
-        // If this PU will fire
-        if(pu.potential >= pu.threshold){
-
-            //Send nexts out (if threshold)
-            for(let i = 0;i < pu.out_bonds.length;i++){
-                let nextSignal = new Nexter(pu.out_bonds[i], 1);
-                boy.oracle.nexts.push(nextSignal);
-            }
-
-            pu.potential = 0;
-            pu.fireJuice = 1;
-        }
-
-
-
-        
-        
-
-        pu.lastObserved = boy.oracle.timeindex;
-        // Update input metas simultaneously^
-
-        // 
-        // Notify friends or not of being over threshold?
-
-        // Frequency Update Threshold?
-        // Freq. Udpate 
-        //weightadj_FRQ
-        //thresholdadj_FRQ
-
-        // Boring ass decay at the end
-        // 
-
-
-    }
-    
-
-    constructor(boyRef, boyInd){
-        this.bf = boyRef;// Refernce to the boy
-        this.bi = boyInd;
-        this.lastObserved = 0;//this.bf.oracle.timeindex;
-        //this.physX = 
-        this.id = PU.CURR_ID;
-        PU.CURR_ID++;
-
-        this.pu_bp = this.bf.pu_types[boyInd];//Processiong Unit blueprint
-
-        // Collection of bonds to its nearest neighbours...
-        this.in_bonds = [];     // this.pu_bp configs effects this array
-        this.out_bonds = [];    // this.pu_bp configs NOT effect this array
-
-        // state of instance of Processing Unit
-        this.health = PU.MAX_HEALTH;
-        this.reputation = 0.5;
-        this.potential = 0.0;//potential
-        this.threshold = 0.5;//this.pu_bp // Gets reset after all connections are hooked up
-        this.fireJuice = 0;//Between 1 and 0, decay rate based off
-    }
-}
+//SmartBoy_8_GC_HelperFuncs.js
+//SmartBoy_8_GC_Logic_Blueprint.js
 
 
 class SmartBoy8 {
@@ -181,6 +26,7 @@ class SmartBoy8 {
 
         // List of agent-wide (shared among PUs) attributes
         this.body_juice_types = SB8_LU.GET_AGENT_JUICE_TYPES(this);
+        console.log(this.body_juice_types);
 
         this.grid_size = grid_size;
         this.num_of_PUs = this.grid_size * this.grid_size
@@ -189,19 +35,7 @@ class SmartBoy8 {
 ////////// Blueprint for input meta to track connection health
 
         this.input_meta_depth = SB8_LU.GET_INPUT_META_DEPTH_LENGTH(this);
-        this.input_meta = [];
-        let fib1 = 1;
-        let fib2 = 1;
-        this.biggestInputDepth = fib2;
-        for(let h = 0;h < this.input_meta_depth;h++){
-            this.biggestInputDepth = fib2;
-
-            this.input_meta.push(fib2 * 10);
-
-            let nu = fib1 + fib2;
-            fib1 = fib2;
-            fib2 = nu;
-        }
+        
 
 ////////// Develop PU types and PU grid
 ////////// Each PU type
@@ -215,7 +49,7 @@ class SmartBoy8 {
 
             let lobeId = h;
             // Create new PU Type object
-            this.pu_types[h] = SB8_LU.GET_NEW_PU_TYPE(this, lobeId)
+            this.pu_types[h] = SB8_LU.GET_NEW_PU_TYPE(this, lobeId);
 
         }
 
@@ -335,6 +169,8 @@ class SmartBoy8 {
                     p.rectMode( p.CENTER );
                     p.ellipseMode( p.CENTER );
                     p.frameRate( 24 );
+
+                    p.PUSize = 20;
                 };
 
                 p.draw = function() {
@@ -349,6 +185,16 @@ class SmartBoy8 {
                             }
                         }
 
+                        // Draw in the joos values 
+                        let jooses = BOY.body_juice_types;
+                        for(let i = 0;i < jooses.length;i++){
+                            p.drawSingleJoosObject(jooses[i], 200 + i * 50, 210);
+                        }
+
+                        // Draw the one PU in detail
+                        if(INVESTIGATIVE_PU){
+                            p.drawDetailsOfGridUnit(INVESTIGATIVE_PU)
+                        }
 
 
                     } else {
@@ -364,8 +210,8 @@ class SmartBoy8 {
 
                     // Show the fire juice
                     p.push();
-                        p.translate(40 + xx * 16, 40 + yy * 16);
-                        p.rect(0, 0, 12, 12);
+                        p.translate(xx * p.PUSize + p.PUSize/2, yy * p.PUSize + p.PUSize/2);
+                        p.rect(0, 0, p.PUSize, p.PUSize);
 
                         p.fill(gu.fireJuice*255, 0, 0);
                         p.ellipse(0, 0, 5, 5);
@@ -373,10 +219,61 @@ class SmartBoy8 {
                     p.pop();
                 };
 
+                p.drawDetailsOfGridUnit = function(gu){
+
+                    p.push();
+                        p.translate(230, 40);
+
+                        p.fill(255);
+                        p.text("potential"+gu.potential, 0, 0)
+
+                    p.pop();
+                };
+
+                p.drawSingleJoosObject = function(joos, xx, yy) {
+                    p.noStroke();
+                    let maxHeight = 80;
+                    let widttth = 32;
+                    let barHeight = joos.juice_concentration*maxHeight;
+                    let ghostHeight = joos.ghost_concentration*maxHeight;
+
+
+                    // Show the fire juice
+                    p.push();
+                        p.translate(xx, yy);
+                        // Show the background
+                        p.fill( 255 );
+                        p.rect(0, 0, widttth, maxHeight);
+
+
+                        // Show base power (out of 255 white)
+                        p.fill( joos.r, joos.g, joos.b );
+                        p.rect(0, barHeight/2, widttth, barHeight);
+
+                        p.fill(175);
+                        p.ellipse(0, ghostHeight, widttth/2, 5);
+
+                    p.pop();
+                }
+
                 p.keyPressed = function(){
                     // if( ! isNaN(p.key) ){
                     //     BOY.pulseStep(Number(p.key), [1, 1, 1, 1, 1] );
                     // }
+                }
+
+                p.mouseMoved = function(){
+                    
+                    if( BOY && BOY.all_PUs){
+                        let ii = Math.floor(p.mouseX / p.PUSize);
+                        let jj = Math.floor(p.mouseY / p.PUSize);
+                        if(BOY.all_PUs[ii]){
+                            if(BOY.all_PUs[jj]){
+                                INVESTIGATIVE_PU = BOY.all_PUs[ii][jj];
+                            }
+                        }
+                    }
+                    
                 }
             };
 
@@ -417,7 +314,7 @@ class SmartBoy8 {
 
 
     // Step oracle index again with the input from the environment:
-    step(agentsInputs) {
+    step(agentsInputs, isThiSWholeGridUpdate) {
         //if(this.oracle.timeindex %50===0) console.log(agentsInputs)
 
         // Update the timeindex here, so STEP_PU for the agentsInputs dont get updated
@@ -425,53 +322,87 @@ class SmartBoy8 {
         this.oracle.timeindex++;
 
 
-        // Just shove them into the nearest lobe (always the first one)
-        for(let z = 0;z < agentsInputs.length;z++){
-            let inputPU = this.pu_types[0].PUs[z];
-            inputPU.potential += agentsInputs[z];
-            PU.STEP_PU(inputPU)
+        // Updating via whole grid update
+        if(isThiSWholeGridUpdate){
+            // Just shove them into the nearest lobe (always the first one)
+            for(let z = 0;z < agentsInputs.length;z++){
+                let inputPU = this.pu_types[0].PUs[z];
+                inputPU.potential += agentsInputs[z];
+                
+            }
 
-            //if(z===3) console.log(inputPU.potential)
+            let readGrid = this.all_PUs;//BOY.oracle.timeindex % 2 === 0 ? BOY.the_grid_COPY : BOY.the_grid;
 
-            // for(let g = 0;g < inputPU.out_bonds.length;g++){
+            for (let i = 0; i < readGrid.length; i++) {
+                for (let j = 0; j < readGrid[i].length; j++) {
+                    PU.STEP_PU_as_whole_grid_update( readGrid[i][j] );
+                }
+            }
 
-            //     let inputSignal = new Nexter(
-            //         inputPU.out_bonds[g], 
-            //         agentsInputs[z]
-            //     );
-            //     this.oracle.nexts.push(inputSignal);
-
-            // }
+            for (let i = 0; i < readGrid.length; i++) {
+                for (let j = 0; j < readGrid[i].length; j++) {
+                    PU.STEP_PU_transfer_outboxes_to_in( readGrid[i][j] );
+                }
+            }
         }
 
+        // Updating via signal architecture
+        else{
+            // Just shove them into the nearest lobe (always the first one)
+            for(let z = 0;z < agentsInputs.length;z++){
+                let inputPU = this.pu_types[0].PUs[z];
+                inputPU.potential += agentsInputs[z];
+                PU.STEP_PU(inputPU);
+
+                
+
+                //if(z===3) console.log(inputPU.potential)
+
+                // for(let g = 0;g < inputPU.out_bonds.length;g++){
+
+                //     let inputSignal = new Nexter(
+                //         inputPU.out_bonds[g], 
+                //         agentsInputs[z]
+                //     );
+                //     this.oracle.nexts.push(inputSignal);
+
+                // }
+            }
 
 
-		let PUs2Check = [];
-        // Sum up the signals and track which neurons are to be checked
-		while ( this.oracle.nexts.length > 0 ){
-			let nexter_signal =    this.oracle.nexts.shift();
-			let puReceiving =       nexter_signal.bond.to;
 
-			if ( PUs2Check.indexOf( puReceiving ) === -1 ) {
-				PUs2Check.push( puReceiving );
-			}
-			
-            // TODO input NN:
-			puReceiving.potential += nexter_signal.bond.weight * nexter_signal.value;
-		}
+            let PUs2Check = [];
+            // Sum up the signals and track which neurons are to be checked
+            while ( this.oracle.nexts.length > 0 ){
+                let nexter_signal =    this.oracle.nexts.shift();
+                let puReceiving =       nexter_signal.bond.to;
+
+                if ( PUs2Check.indexOf( puReceiving ) === -1 ) {
+                    PUs2Check.push( puReceiving );
+                }
+                
+                // TODO input NN:
+                puReceiving.potential += nexter_signal.bond.weight * nexter_signal.value;
+            }
 
 
 
-		// While there are neurons to fire?
-		for(let k = 0;k < PUs2Check.length;k++){
-            PU.STEP_PU(PUs2Check[k])
+            // While there are neurons to fire?
+            for(let k = 0;k < PUs2Check.length;k++){
+                PU.STEP_PU(PUs2Check[k])
+                PUs2Check[k].inbox_g = [];
+                PUs2Check[k].outbox_g = [];
+            }
         }
+        
 
 
-        // Decay the juices
+        // Update the juices of the agent
         for( let h = 0; h < this.body_juice_types.length; h++ ){
-            this.body_juice_types[h].val *= this.body_juice_types[h].decay;
+            Juice.update(this.body_juice_types[h])
         }
+        // Should be the last thing of the whole agent algoirithms
+
     }
 
     // Step the normal connected way

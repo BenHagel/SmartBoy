@@ -8,36 +8,45 @@ class SB8_LU{// Smartboy8_LogicUnit
 
     // This sets "body_juice_types"
     static GET_AGENT_JUICE_TYPES(boy){
-        return [
-            {
-                label: "reward_joos",
-                val: 0, 
-                decay: (1-boy.decVar) + (boy.decVar - 0.001*boy.decVar) * boy.rand.GET_GENE()
-            },
+        let ALL_AGENT_JUICES = [];
+        //                          squirt              decay                           stretchfactor of eqn    ghost valuechase
+        let rewardJoos = new Juice(boy.rand.GET_GENE(), 0.9 + 0.1*boy.rand.GET_GENE(), boy.rand.GET_GENE()*3, 0.08*boy.rand.GET_GENE());
+        rewardJoos.label = "reward_joos"
+        rewardJoos.r = 200
+        rewardJoos.g = 120
+        rewardJoos.b = 100
+        ALL_AGENT_JUICES.push(rewardJoos);
 
-            //     Pain juice
-            {
-                label: "pain_joos",
-                val: 0, 
-                decay: (1-boy.decVar) + (boy.decVar - 0.001*boy.decVar) * boy.rand.GET_GENE()
-            },
+        let painJoos = new Juice(boy.rand.GET_GENE(), 0.9 + 0.1*boy.rand.GET_GENE(), boy.rand.GET_GENE()*3, 0.08*boy.rand.GET_GENE());
+        painJoos.label = "pain_joos"
+        painJoos.r = 6
+        painJoos.g = 120
+        painJoos.b = 100
+        ALL_AGENT_JUICES.push(painJoos);
 
-            //     Sleepy juice
-            {
-                label: "sleepy_joos",
-                val: 0, 
-                decay: (1-boy.decVar) + (boy.decVar - 0.001*boy.decVar) * boy.rand.GET_GENE()
-            }
-        ];
+        let sleepJoos = new Juice(boy.rand.GET_GENE(), 0.9 + 0.1*boy.rand.GET_GENE(), boy.rand.GET_GENE()*3, 0.08*boy.rand.GET_GENE());
+        sleepJoos.label = "eepy_joos"
+        sleepJoos.r = 0
+        sleepJoos.g = 0
+        sleepJoos.b = 210
+        ALL_AGENT_JUICES.push(sleepJoos);
+
+        return ALL_AGENT_JUICES;
     }
 
     static GET_NUM_DIFFERENT_TYPES_LOBES(boy){
         return 1 + Math.floor(boy.rand.GET_GENE() * 3);
     }
 
-    static GET_INPUT_META_DEPTH_LENGTH(boy){
-        return 9;
+    static GET_INPUT_META_JUICE_TEMPLATES(boy){
+
     }
+
+    static GET_INPUT_META_DEPTH_LENGTH(boy){
+        return 4;
+    }
+
+    
 
     static GET_NEW_PU_TYPE(boy, lobeId){
         let minSize = Math.floor(boy.num_of_PUs / boy.pu_type_amt)
@@ -69,7 +78,7 @@ class SB8_LU{// Smartboy8_LogicUnit
             // Called to massage weight Nudge
             weightadj_NN: new StdNn(
                 [   // state of whole organism      //input //input meta
-                    boy.body_juice_types.length    + 1     + boy.input_meta.length, 
+                    boy.body_juice_types.length    + 1     + boy.input_meta_depth, 
                     1
                 ],
                 boy.seed + 543),
@@ -79,7 +88,7 @@ class SB8_LU{// Smartboy8_LogicUnit
             thresholdPerWeight: 0.15 + boy.rand.GET_GENE() * 1,
             thresholdadj_NN: new StdNn(
                 [   // state of whole organism      //input //input meta
-                    boy.body_juice_types.length    + 1     + boy.input_meta.length, 
+                    boy.body_juice_types.length    + 1     + boy.input_meta_depth, 
                     1
                 ],
                 boy.seed + 5143),
@@ -89,6 +98,17 @@ class SB8_LU{// Smartboy8_LogicUnit
 
             PUs: []
         };
+
+        // Add in the PU juice types
+        puType.inputMetaJuices = [];
+        for(let b = 0;b < boy.input_meta_depth;b++){
+            let nuJuus = new Juice(boy.rand.GET_GENE(), 0.9 + 0.1*boy.rand.GET_GENE(), boy.rand.GET_GENE()*3, 0.08*boy.rand.GET_GENE());
+            nuJuus.label = "im" + b;
+            nuJuus.r = Math.floor(boy.rand.GET_GENE() * 255)
+            nuJuus.g = Math.floor(boy.rand.GET_GENE() * 255)
+            nuJuus.b = Math.floor(boy.rand.GET_GENE() * 255)
+            puType.inputMetaJuices.push(nuJuus);
+        }
 
         return puType;
     }
