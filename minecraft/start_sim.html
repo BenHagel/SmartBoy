@@ -102,8 +102,14 @@
         <canvas class="hidden" id="canvForGPUToUse"></canvas>
         <div id="p5BoyCanvas">
             <p>Agent:</p>
+            <hr>
+            <p>PU Type:</p>
+            <textarea id="puTypeInfo" cols="24"></textarea>
+
             <button id="sstop" onclick="toggleRunner()">stop</button>
+            <button id="framep" onclick="oneFrame()">frame+</button>
         </div>
+        
         <div id="timeShower">
 
         </div>
@@ -112,7 +118,7 @@
             // Oracle control occurs here
             const randWorldSeed = Math.floor( Math.random() * 100300500 );
             const randBoySeed = Math.floor( Math.random() * 30300500 );
-            const randEnvSeed = Math.floor( Math.random() * 32 );// thirty-two worlds of exciting adventure!
+            const randEnvSeed = Math.floor( Math.random() * 322 );// thirty-two worlds of exciting adventure!
 
 
 
@@ -121,6 +127,7 @@
             console.log( 'Rand environment seed:', randEnvSeed );
 
             var WORLD = new World( randWorldSeed, document.getElementById( 'canvForGPUToUse' ) );
+            
             var running = true;
             var BOY = new SmartBoy8( 
                 6, 
@@ -132,7 +139,7 @@
             var INVESTIGATIVE_PU = null;
 
             var ENV = new Environment(randEnvSeed)
-
+            ENV.timeIndex = 2180;
 
             // Code to test the normal distribution
             // let avgs = [];
@@ -169,35 +176,45 @@
                 let hub = document.getElementById('sstop');
                 running = !running
                 hub.innerText = (!running)?"start":"stop";
-                // For SmartBoy 6 inputs
-                //BOY.activate([1,2,3,4,5,5,8]);
-                //BOY.step();
+            }
 
-                // For SmartBoy 7 inputs
-                // BOY.step()
+            function moveFrame(){
+                // For Smart Boy 8 inputs
+                Environment.stepConsciousness(BOY, ENV)
 
 
+                // Update counter:
+                let dd = document.getElementById("timeShower");
+                dd.innerHTML = ""
+                    + "Boy timeIndex: " + BOY.oracle.timeindex + "<br>"
+                    + "Boy lobes: " + BOY.pu_types.length + "<br>"
+                    + "Boy nexts: " + BOY.oracle.nexts.length + "<br>"
+                    + "Env timeIndex: " + ENV.timeIndex + "<br>"
+                    + "Env sunHeight: " + ENV.sunHeight + "<br>";
+
+                if(INVESTIGATIVE_PU){
+                    let gu = INVESTIGATIVE_PU;
+                    let pot = Math.floor(gu.potential/gu.threshold*100)
+
+                    dd = document.getElementById("puTypeInfo");
+
+                    dd.innerText = "potential: " + pot + "%";
+
+                }
+                
+            }
+
+            function oneFrame(){
+                if(!running){
+                    moveFrame()
+                }
             }
 
             function tick() {
                 if(running){
-                    //for(let y = 0;y < 1;y++) WORLD.draw();   
-                    //frame = requestAnimationFrame(tick);
-
-                    // For Smart Boy 8 inputs
-                    Environment.stepConsciousness(BOY, ENV)
-
-
-                    // Update counter:
-                    let dd = document.getElementById("timeShower")
-                    dd.innerHTML = ""
-                        + "Boy timeIndex: " + BOY.oracle.timeindex + "<br>"
-                        + "Boy lobes: " + BOY.pu_types.length + "<br>"
-                        + "Boy nexts: " + BOY.oracle.nexts.length + "<br>"
-                        + "Env timeIndex: " + ENV.timeIndex + "<br>"
-                        + "Env sunHeight: " + ENV.sunHeight + "<br>"
+                    moveFrame();
                 }
-                setTimeout(tick, 16)
+                setTimeout(tick, 116)
             };
             tick();
             //requestAnimationFrame(tick);

@@ -307,16 +307,9 @@ class PU{
             pu.fireJuice = 1;
         }
 
-
-
         // Clear inbox cause just dealt w all of it
         pu.inbox_g = [];
-        
-
         pu.lastObserved = boy.oracle.timeindex;
-
-
-
     }
 
     static STEP_PU_transfer_outboxes_to_in(pu){

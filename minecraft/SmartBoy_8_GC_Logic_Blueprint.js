@@ -12,30 +12,30 @@ class SB8_LU{// Smartboy8_LogicUnit
         //                          squirt              decay                           stretchfactor of eqn    ghost valuechase
         let rewardJoos = new Juice(boy.rand.GET_GENE(), 0.9 + 0.1*boy.rand.GET_GENE(), boy.rand.GET_GENE()*3, 0.08*boy.rand.GET_GENE());
         rewardJoos.label = "reward_joos"
-        rewardJoos.r = 200
-        rewardJoos.g = 120
+        rewardJoos.r = 120
+        rewardJoos.g = 220
         rewardJoos.b = 100
         ALL_AGENT_JUICES.push(rewardJoos);
 
         let painJoos = new Juice(boy.rand.GET_GENE(), 0.9 + 0.1*boy.rand.GET_GENE(), boy.rand.GET_GENE()*3, 0.08*boy.rand.GET_GENE());
         painJoos.label = "pain_joos"
-        painJoos.r = 6
-        painJoos.g = 120
-        painJoos.b = 100
+        painJoos.r = 166
+        painJoos.g = 30
+        painJoos.b = 40
         ALL_AGENT_JUICES.push(painJoos);
 
         let sleepJoos = new Juice(boy.rand.GET_GENE(), 0.9 + 0.1*boy.rand.GET_GENE(), boy.rand.GET_GENE()*3, 0.08*boy.rand.GET_GENE());
         sleepJoos.label = "eepy_joos"
         sleepJoos.r = 0
         sleepJoos.g = 0
-        sleepJoos.b = 210
+        sleepJoos.b = 45
         ALL_AGENT_JUICES.push(sleepJoos);
 
         return ALL_AGENT_JUICES;
     }
 
     static GET_NUM_DIFFERENT_TYPES_LOBES(boy){
-        return 1 + Math.floor(boy.rand.GET_GENE() * 3);
+        return 1;// + Math.floor(boy.rand.GET_GENE() * 3);
     }
 
     static GET_INPUT_META_JUICE_TEMPLATES(boy){
@@ -56,7 +56,7 @@ class SB8_LU{// Smartboy8_LogicUnit
             population: lobeId===0 ? minSize+remainder : minSize,
 
             // Connectivity
-            cohesionOutputs_min: 2,
+            cohesionOutputs_min: 3,
             //cohesionOutputs_weightRange: 1,       //TODO math.Round some here
             adhesionOutputs_min: 1,
             //adhesionOutputs_weightRange: 3,

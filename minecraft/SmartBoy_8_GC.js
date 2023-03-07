@@ -148,7 +148,10 @@ class SmartBoy8 {
 		};
 
 
-
+        // Save the gene made
+        this.totalGene = this.rand.END_GENE()
+        console.log('total gene for this boy:');
+        console.log(this.totalGene);
 
         // Create the threshold
 
@@ -191,10 +194,10 @@ class SmartBoy8 {
                             p.drawSingleJoosObject(jooses[i], 200 + i * 50, 210);
                         }
 
-                        // Draw the one PU in detail
-                        if(INVESTIGATIVE_PU){
-                            p.drawDetailsOfGridUnit(INVESTIGATIVE_PU)
-                        }
+                        // // Draw the one PU in detail
+                        // if(INVESTIGATIVE_PU){
+                        //     p.drawDetailsOfGridUnit(INVESTIGATIVE_PU)
+                        // }
 
 
                     } else {
@@ -225,7 +228,10 @@ class SmartBoy8 {
                         p.translate(230, 40);
 
                         p.fill(255);
-                        p.text("potential"+gu.potential, 0, 0)
+                        let pot = Math.floor(gu.potential/gu.threshold*1000)
+                        p.text("potential: " + pot, 0, 0)
+                        p.text("threshold: " + gu.threshold, 0, 25)
+                        //p.text("inbox: " + gu.inbox_g.length + "  " + gu.outbox_g.length, 0, 25)
 
                     p.pop();
                 };
@@ -262,7 +268,7 @@ class SmartBoy8 {
                     // }
                 }
 
-                p.mouseMoved = function(){
+                p.mouseClicked = function(){
                     
                     if( BOY && BOY.all_PUs){
                         let ii = Math.floor(p.mouseX / p.PUSize);

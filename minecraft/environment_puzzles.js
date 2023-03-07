@@ -22,7 +22,7 @@ class Environment{
         this.timeIndex = 0
 
         // Env frames between agent
-        this.fpd = 16
+        this.fpd = 1
 
 
         //current coursesteps:
@@ -33,7 +33,7 @@ class Environment{
     }
 
     refreshSunHeight(){
-        this.sunHeight = Math.sin(this.timeIndex/1400 - Math.PI/2)*0.5+0.5
+        this.sunHeight = 0.5 * Math.sin(this.timeIndex/1400 - Math.PI/2) + 0.5
     }
 
     step(){

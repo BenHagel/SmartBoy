@@ -4,10 +4,17 @@ class PseudRand{
         this.modulus = 2 ** 32
         this.a = 1664525
         this.c = 1013904223
+        this.totalVals = []
     }
 
     GET_GENE(){
-        return this.random();
+        let kk = this.random();
+        this.totalVals.push(kk);
+        return kk;
+    }
+
+    END_GENE(){
+        return this.totalVals;
     }
 
     random(){
